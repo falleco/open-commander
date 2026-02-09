@@ -8,7 +8,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "cd apps/web && dotenvx run -f ../../.env -- bun run dev",
+    "dev": "cd apps/web && bun run dev",
     "typecheck": "cd apps/web && bun run typecheck",
     "------------------------- TESTING -------------------------": "",
     "test": "cd apps/web && bun run test",
@@ -16,12 +16,12 @@
     "check": "biome check .",
     "check:fix": "biome check --write .",
     "------------------------- DATABASE -------------------------": "",
-    "db:generate": "cd apps/web && dotenvx run -f ../../.env -- bun run db:generate",
-    "db:studio": "cd apps/web && dotenvx run -f ../../.env -- bun run db:studio",
-    "db:migrate": "cd apps/web && dotenvx run -f ../../.env -- bun run db:migrate",
-    "db:push": "cd apps/web && dotenvx run -f ../../.env -- bun run db:push",
-    "db:seed": "cd apps/web && dotenvx run -f ../../.env -- bun run db:seed",
-    "db:reset": "cd apps/web && dotenvx run -f ../../.env -- bun run db:reset"
+    "db:generate": "cd apps/web && dotenvx run -f .env -- bun run db:generate",
+    "db:studio": "cd apps/web && dotenvx run -f .env -- bun run db:studio",
+    "db:migrate": "cd apps/web && dotenvx run -f .env -- bun run db:migrate",
+    "db:push": "cd apps/web && dotenvx run -f .env -- bun run db:push",
+    "db:seed": "cd apps/web && dotenvx run -f .env -- bun run db:seed",
+    "db:reset": "cd apps/web && dotenvx run -f .env -- bun run db:reset"
   },
   "packageManager": "bun@1.3.3",
   "engines": {

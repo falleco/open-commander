@@ -26,29 +26,35 @@ export const env = createEnv({
     AGENT_CONFIG_BASE_PATH: z
       .string()
       .default(path.resolve(process.cwd(), "agent")),
-    GITHUB_CLIENT_ID: z.string(),
-    GITHUB_CLIENT_SECRET: z.string(),
-    GOOGLE_CLIENT_ID: z.string(),
-    GOOGLE_CLIENT_SECRET: z.string(),
-    APPLE_CLIENT_ID: z.string(),
-    APPLE_CLIENT_SECRET: z.string(),
+    GITHUB_CLIENT_ID: z.string().optional(),
+    GITHUB_CLIENT_SECRET: z.string().optional(),
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
+    APPLE_CLIENT_ID: z.string().optional(),
+    APPLE_CLIENT_SECRET: z.string().optional(),
     ENABLE_ARTIFICIAL_TRPC_DELAY: z.coerce.boolean().default(false),
-    DATABASE_URL: z.string().url(),
+    DATABASE_URL: z
+      .string()
+      .url()
+      .default("postgresql://postgres:postgres@localhost:5432/commander_dev"),
     AGENT_WORKSPACE: z.string().optional(),
     DIND_CERTS_VOLUME: z.string().optional(),
-    COMMANDER_BASE_PATH: z.string(),
+    COMMANDER_BASE_PATH: z.string().default(path.resolve(process.cwd())),
   },
   client: {
-    NEXT_PUBLIC_APP_URL: z.string().url(),
-    NEXT_PUBLIC_UPLOADTHING_URL_ROOT: z.string().url(),
+    NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
+    NEXT_PUBLIC_UPLOADTHING_URL_ROOT: z.string().url().optional(),
     NEXT_PUBLIC_GITHUB_AUTH_ENABLED: z
       .string()
+      .default("false")
       .transform((input) => input === "true"),
     NEXT_PUBLIC_GOOGLE_AUTH_ENABLED: z
       .string()
+      .default("false")
       .transform((input) => input === "true"),
     NEXT_PUBLIC_APPLE_AUTH_ENABLED: z
       .string()
+      .default("false")
       .transform((input) => input === "true"),
     NEXT_PUBLIC_DISABLE_AUTH: z.coerce.boolean().default(false),
   },
