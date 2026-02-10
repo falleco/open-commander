@@ -78,10 +78,10 @@ export const taskExecutionService = {
 
     // Prepare state directories
     const { claudeJson, claudeDir } = await ensureClaudeState(
-      env.AGENT_STATE_BASE_PATH,
+      `${env.COMMANDER_BASE_PATH}/.state`,
     );
     const { agentsConfig } = await ensureAgentsConfig(
-      env.AGENT_CONFIG_BASE_PATH,
+      `${env.COMMANDER_BASE_PATH}/agents`,
     );
 
     // Ensure network exists

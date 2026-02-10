@@ -1,5 +1,6 @@
 import { type Job, Worker } from "bullmq";
 import { taskExecutionService } from "@/lib/docker/task-execution.service";
+import { gitService } from "@/lib/git/git.service";
 import { db } from "@/server/db";
 import {
   type CommandQueueParams,
@@ -11,13 +12,14 @@ import { redisConnection } from "@/server/jobs/redis";
  * Process a command job (task execution).
  */
 async function processCommandJob(job: Job<CommandQueueParams>): Promise<void> {
-  const { executionId, taskId, body, agentId, mountPoint } = job.data;
+  const { executionId, taskId, body, agentId, repository, mountPoint } =
+    job.data;
 
   job.log(
     `[command.worker] Starting job: jobId=${job.id}, executionId=${executionId}, taskId=${taskId}`,
   );
   job.log(
-    `[command.worker] Job details: agentId=${agentId}, mountPoint=${mountPoint ?? "none"}`,
+    `[command.worker] Job details: agentId=${agentId}, repository=${repository ?? "none"}, mountPoint=${mountPoint ?? "none"}`,
   );
 
   // Update job progress
@@ -36,7 +38,31 @@ async function processCommandJob(job: Job<CommandQueueParams>): Promise<void> {
       },
     });
 
-    await job.updateProgress(20);
+    await job.updateProgress(15);
+
+    // If repository is provided, clone it first
+    let effectiveMountPoint = mountPoint;
+    if (repository) {
+      job.log(`[command.worker] Cloning repository: ${repository}`);
+
+      if (!gitService.isWorkspaceConfigured()) {
+        throw new Error(
+          "AGENT_WORKSPACE is not configured. Cannot clone repository.",
+        );
+      }
+
+      const repoPath = await gitService.cloneOrPull(repository);
+      effectiveMountPoint = repoPath;
+      job.log(`[command.worker] Repository cloned to: ${repoPath}`);
+
+      // Update task with the mount point
+      await db.task.update({
+        where: { id: taskId },
+        data: { mountPoint: repoPath },
+      });
+    }
+
+    await job.updateProgress(25);
 
     // Start the container
     job.log(
@@ -46,7 +72,7 @@ async function processCommandJob(job: Job<CommandQueueParams>): Promise<void> {
       taskId,
       body,
       agentId,
-      mountPoint,
+      mountPoint: effectiveMountPoint,
     });
 
     job.log(

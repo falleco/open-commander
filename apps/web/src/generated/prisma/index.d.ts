@@ -9051,6 +9051,7 @@ export namespace Prisma {
     status: $Enums.TaskStatus | null
     source: $Enums.TaskSource | null
     agentId: $Enums.AgentProvider | null
+    repository: string | null
     mountPoint: string | null
     userId: string | null
     createdAt: Date | null
@@ -9064,6 +9065,7 @@ export namespace Prisma {
     status: $Enums.TaskStatus | null
     source: $Enums.TaskSource | null
     agentId: $Enums.AgentProvider | null
+    repository: string | null
     mountPoint: string | null
     userId: string | null
     createdAt: Date | null
@@ -9077,6 +9079,7 @@ export namespace Prisma {
     status: number
     source: number
     agentId: number
+    repository: number
     mountPoint: number
     userId: number
     attachments: number
@@ -9093,6 +9096,7 @@ export namespace Prisma {
     status?: true
     source?: true
     agentId?: true
+    repository?: true
     mountPoint?: true
     userId?: true
     createdAt?: true
@@ -9106,6 +9110,7 @@ export namespace Prisma {
     status?: true
     source?: true
     agentId?: true
+    repository?: true
     mountPoint?: true
     userId?: true
     createdAt?: true
@@ -9119,6 +9124,7 @@ export namespace Prisma {
     status?: true
     source?: true
     agentId?: true
+    repository?: true
     mountPoint?: true
     userId?: true
     attachments?: true
@@ -9206,6 +9212,7 @@ export namespace Prisma {
     status: $Enums.TaskStatus
     source: $Enums.TaskSource
     agentId: $Enums.AgentProvider | null
+    repository: string | null
     mountPoint: string | null
     userId: string
     attachments:unknown | null
@@ -9237,6 +9244,7 @@ export namespace Prisma {
     status?: boolean
     source?: boolean
     agentId?: boolean
+    repository?: boolean
     mountPoint?: boolean
     userId?: boolean
     attachments?: boolean
@@ -9254,6 +9262,7 @@ export namespace Prisma {
     status?: boolean
     source?: boolean
     agentId?: boolean
+    repository?: boolean
     mountPoint?: boolean
     userId?: boolean
     attachments?: boolean
@@ -9269,6 +9278,7 @@ export namespace Prisma {
     status?: boolean
     source?: boolean
     agentId?: boolean
+    repository?: boolean
     mountPoint?: boolean
     userId?: boolean
     attachments?: boolean
@@ -9284,6 +9294,7 @@ export namespace Prisma {
     status?: boolean
     source?: boolean
     agentId?: boolean
+    repository?: boolean
     mountPoint?: boolean
     userId?: boolean
     attachments?: boolean
@@ -9291,7 +9302,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type TaskOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "body" | "status" | "source" | "agentId" | "mountPoint" | "userId" | "attachments" | "createdAt" | "updatedAt", ExtArgs["result"]["task"]>
+  export type TaskOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "body" | "status" | "source" | "agentId" | "repository" | "mountPoint" | "userId" | "attachments" | "createdAt" | "updatedAt", ExtArgs["result"]["task"]>
   export type TaskInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
     executions?: boolean | Task$executionsArgs<ExtArgs>
@@ -9317,6 +9328,7 @@ export namespace Prisma {
       status: $Enums.TaskStatus
       source: $Enums.TaskSource
       agentId: $Enums.AgentProvider | null
+      repository: string | null
       mountPoint: string | null
       userId: string
       attachments:unknown | null
@@ -9753,6 +9765,7 @@ export namespace Prisma {
     readonly status: FieldRef<"Task", 'TaskStatus'>
     readonly source: FieldRef<"Task", 'TaskSource'>
     readonly agentId: FieldRef<"Task", 'AgentProvider'>
+    readonly repository: FieldRef<"Task", 'String'>
     readonly mountPoint: FieldRef<"Task", 'String'>
     readonly userId: FieldRef<"Task", 'String'>
     readonly attachments: FieldRef<"Task", 'Json'>
@@ -14975,6 +14988,7 @@ export namespace Prisma {
     status: 'status',
     source: 'source',
     agentId: 'agentId',
+    repository: 'repository',
     mountPoint: 'mountPoint',
     userId: 'userId',
     attachments: 'attachments',
@@ -15757,6 +15771,7 @@ export namespace Prisma {
     status?: EnumTaskStatusFilter<"Task"> | $Enums.TaskStatus
     source?: EnumTaskSourceFilter<"Task"> | $Enums.TaskSource
     agentId?: EnumAgentProviderNullableFilter<"Task"> | $Enums.AgentProvider | null
+    repository?: StringNullableFilter<"Task"> | string | null
     mountPoint?: StringNullableFilter<"Task"> | string | null
     userId?: StringFilter<"Task"> | string
     attachments?: JsonNullableFilter<"Task">
@@ -15773,6 +15788,7 @@ export namespace Prisma {
     status?: SortOrder
     source?: SortOrder
     agentId?: SortOrderInput | SortOrder
+    repository?: SortOrderInput | SortOrder
     mountPoint?: SortOrderInput | SortOrder
     userId?: SortOrder
     attachments?: SortOrderInput | SortOrder
@@ -15792,6 +15808,7 @@ export namespace Prisma {
     status?: EnumTaskStatusFilter<"Task"> | $Enums.TaskStatus
     source?: EnumTaskSourceFilter<"Task"> | $Enums.TaskSource
     agentId?: EnumAgentProviderNullableFilter<"Task"> | $Enums.AgentProvider | null
+    repository?: StringNullableFilter<"Task"> | string | null
     mountPoint?: StringNullableFilter<"Task"> | string | null
     userId?: StringFilter<"Task"> | string
     attachments?: JsonNullableFilter<"Task">
@@ -15808,6 +15825,7 @@ export namespace Prisma {
     status?: SortOrder
     source?: SortOrder
     agentId?: SortOrderInput | SortOrder
+    repository?: SortOrderInput | SortOrder
     mountPoint?: SortOrderInput | SortOrder
     userId?: SortOrder
     attachments?: SortOrderInput | SortOrder
@@ -15828,6 +15846,7 @@ export namespace Prisma {
     status?: EnumTaskStatusWithAggregatesFilter<"Task"> | $Enums.TaskStatus
     source?: EnumTaskSourceWithAggregatesFilter<"Task"> | $Enums.TaskSource
     agentId?: EnumAgentProviderNullableWithAggregatesFilter<"Task"> | $Enums.AgentProvider | null
+    repository?: StringNullableWithAggregatesFilter<"Task"> | string | null
     mountPoint?: StringNullableWithAggregatesFilter<"Task"> | string | null
     userId?: StringWithAggregatesFilter<"Task"> | string
     attachments?: JsonNullableWithAggregatesFilter<"Task">
@@ -16760,6 +16779,7 @@ export namespace Prisma {
     status?: $Enums.TaskStatus
     source?: $Enums.TaskSource
     agentId?: $Enums.AgentProvider | null
+    repository?: string | null
     mountPoint?: string | null
     attachments?:unknown | NullableJsonNullValueInput
     createdAt?: Date | string
@@ -16775,6 +16795,7 @@ export namespace Prisma {
     status?: $Enums.TaskStatus
     source?: $Enums.TaskSource
     agentId?: $Enums.AgentProvider | null
+    repository?: string | null
     mountPoint?: string | null
     userId: string
     attachments?:unknown | NullableJsonNullValueInput
@@ -16790,6 +16811,7 @@ export namespace Prisma {
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
     source?: EnumTaskSourceFieldUpdateOperationsInput | $Enums.TaskSource
     agentId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
+    repository?: NullableStringFieldUpdateOperationsInput | string | null
     mountPoint?: NullableStringFieldUpdateOperationsInput | string | null
     attachments?:unknown | NullableJsonNullValueInput
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -16805,6 +16827,7 @@ export namespace Prisma {
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
     source?: EnumTaskSourceFieldUpdateOperationsInput | $Enums.TaskSource
     agentId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
+    repository?: NullableStringFieldUpdateOperationsInput | string | null
     mountPoint?: NullableStringFieldUpdateOperationsInput | string | null
     userId?: StringFieldUpdateOperationsInput | string
     attachments?:unknown | NullableJsonNullValueInput
@@ -16820,6 +16843,7 @@ export namespace Prisma {
     status?: $Enums.TaskStatus
     source?: $Enums.TaskSource
     agentId?: $Enums.AgentProvider | null
+    repository?: string | null
     mountPoint?: string | null
     userId: string
     attachments?:unknown | NullableJsonNullValueInput
@@ -16834,6 +16858,7 @@ export namespace Prisma {
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
     source?: EnumTaskSourceFieldUpdateOperationsInput | $Enums.TaskSource
     agentId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
+    repository?: NullableStringFieldUpdateOperationsInput | string | null
     mountPoint?: NullableStringFieldUpdateOperationsInput | string | null
     attachments?:unknown | NullableJsonNullValueInput
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -16847,6 +16872,7 @@ export namespace Prisma {
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
     source?: EnumTaskSourceFieldUpdateOperationsInput | $Enums.TaskSource
     agentId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
+    repository?: NullableStringFieldUpdateOperationsInput | string | null
     mountPoint?: NullableStringFieldUpdateOperationsInput | string | null
     userId?: StringFieldUpdateOperationsInput | string
     attachments?:unknown | NullableJsonNullValueInput
@@ -17811,6 +17837,7 @@ export namespace Prisma {
     status?: SortOrder
     source?: SortOrder
     agentId?: SortOrder
+    repository?: SortOrder
     mountPoint?: SortOrder
     userId?: SortOrder
     attachments?: SortOrder
@@ -17825,6 +17852,7 @@ export namespace Prisma {
     status?: SortOrder
     source?: SortOrder
     agentId?: SortOrder
+    repository?: SortOrder
     mountPoint?: SortOrder
     userId?: SortOrder
     createdAt?: SortOrder
@@ -17838,6 +17866,7 @@ export namespace Prisma {
     status?: SortOrder
     source?: SortOrder
     agentId?: SortOrder
+    repository?: SortOrder
     mountPoint?: SortOrder
     userId?: SortOrder
     createdAt?: SortOrder
@@ -19158,6 +19187,7 @@ export namespace Prisma {
     status?: $Enums.TaskStatus
     source?: $Enums.TaskSource
     agentId?: $Enums.AgentProvider | null
+    repository?: string | null
     mountPoint?: string | null
     attachments?:unknown | NullableJsonNullValueInput
     createdAt?: Date | string
@@ -19172,6 +19202,7 @@ export namespace Prisma {
     status?: $Enums.TaskStatus
     source?: $Enums.TaskSource
     agentId?: $Enums.AgentProvider | null
+    repository?: string | null
     mountPoint?: string | null
     attachments?:unknown | NullableJsonNullValueInput
     createdAt?: Date | string
@@ -19367,6 +19398,7 @@ export namespace Prisma {
     status?: EnumTaskStatusFilter<"Task"> | $Enums.TaskStatus
     source?: EnumTaskSourceFilter<"Task"> | $Enums.TaskSource
     agentId?: EnumAgentProviderNullableFilter<"Task"> | $Enums.AgentProvider | null
+    repository?: StringNullableFilter<"Task"> | string | null
     mountPoint?: StringNullableFilter<"Task"> | string | null
     userId?: StringFilter<"Task"> | string
     attachments?: JsonNullableFilter<"Task">
@@ -20122,6 +20154,7 @@ export namespace Prisma {
     status?: $Enums.TaskStatus
     source?: $Enums.TaskSource
     agentId?: $Enums.AgentProvider | null
+    repository?: string | null
     mountPoint?: string | null
     attachments?:unknown | NullableJsonNullValueInput
     createdAt?: Date | string
@@ -20136,6 +20169,7 @@ export namespace Prisma {
     status?: $Enums.TaskStatus
     source?: $Enums.TaskSource
     agentId?: $Enums.AgentProvider | null
+    repository?: string | null
     mountPoint?: string | null
     userId: string
     attachments?:unknown | NullableJsonNullValueInput
@@ -20166,6 +20200,7 @@ export namespace Prisma {
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
     source?: EnumTaskSourceFieldUpdateOperationsInput | $Enums.TaskSource
     agentId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
+    repository?: NullableStringFieldUpdateOperationsInput | string | null
     mountPoint?: NullableStringFieldUpdateOperationsInput | string | null
     attachments?:unknown | NullableJsonNullValueInput
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -20180,6 +20215,7 @@ export namespace Prisma {
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
     source?: EnumTaskSourceFieldUpdateOperationsInput | $Enums.TaskSource
     agentId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
+    repository?: NullableStringFieldUpdateOperationsInput | string | null
     mountPoint?: NullableStringFieldUpdateOperationsInput | string | null
     userId?: StringFieldUpdateOperationsInput | string
     attachments?:unknown | NullableJsonNullValueInput
@@ -20593,6 +20629,7 @@ export namespace Prisma {
     status?: $Enums.TaskStatus
     source?: $Enums.TaskSource
     agentId?: $Enums.AgentProvider | null
+    repository?: string | null
     mountPoint?: string | null
     attachments?:unknown | NullableJsonNullValueInput
     createdAt?: Date | string
@@ -20725,6 +20762,7 @@ export namespace Prisma {
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
     source?: EnumTaskSourceFieldUpdateOperationsInput | $Enums.TaskSource
     agentId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
+    repository?: NullableStringFieldUpdateOperationsInput | string | null
     mountPoint?: NullableStringFieldUpdateOperationsInput | string | null
     attachments?:unknown | NullableJsonNullValueInput
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -20739,6 +20777,7 @@ export namespace Prisma {
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
     source?: EnumTaskSourceFieldUpdateOperationsInput | $Enums.TaskSource
     agentId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
+    repository?: NullableStringFieldUpdateOperationsInput | string | null
     mountPoint?: NullableStringFieldUpdateOperationsInput | string | null
     attachments?:unknown | NullableJsonNullValueInput
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -20753,6 +20792,7 @@ export namespace Prisma {
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
     source?: EnumTaskSourceFieldUpdateOperationsInput | $Enums.TaskSource
     agentId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
+    repository?: NullableStringFieldUpdateOperationsInput | string | null
     mountPoint?: NullableStringFieldUpdateOperationsInput | string | null
     attachments?:unknown | NullableJsonNullValueInput
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string

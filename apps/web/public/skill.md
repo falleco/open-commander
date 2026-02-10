@@ -46,7 +46,8 @@ GET /api/tasks
       "body": "Task description",
       "status": "todo",
       "agentId": "claude",
-      "mountPoint": "projects/my-app",
+      "repository": "octocat/hello-world",
+      "mountPoint": "repos/octocat/hello-world",
       "attachments": [],
       "createdAt": "2024-01-01T00:00:00.000Z",
       "updatedAt": "2024-01-01T00:00:00.000Z",
@@ -84,9 +85,32 @@ Content-Type: application/json
 |------------|--------|----------|------------------------------------------------|
 | body       | string | Yes      | Task description/instructions for the agent    |
 | agentId    | string | No       | Agent to assign: `opencode`, `claude`, `codex`, `cursor` |
-| mountPoint | string | No       | Relative path within workspace to mount as `/workspace` |
+| repository | string | No       | GitHub repository in `owner/repo` format. Will be cloned automatically. |
+| mountPoint | string | No       | _(Deprecated)_ Relative path within workspace. Use `repository` instead. |
 
-**Example Request:**
+> **Important: Automatic Repository Cloning**
+>
+> When the `repository` parameter is provided:
+> 1. The server **automatically clones** the repository before starting the agent
+> 2. The cloned repository becomes the agent's **working directory** (`/workspace`)
+> 3. **Do NOT instruct the agent to clone the repository** in the task `body` — it's already done
+> 4. The agent starts with full access to the repository files and can immediately work on them
+>
+> The clone uses the server's configured `GITHUB_TOKEN` for authentication, supporting both public and private repositories.
+
+**Example Request (with GitHub repository):**
+
+```json
+{
+  "body": "Fix the bug in src/auth/login.ts - users are getting logged out after 5 minutes",
+  "agentId": "claude",
+  "repository": "my-org/my-app"
+}
+```
+
+In this example, the agent will start with `my-org/my-app` already cloned and available at `/workspace`. The agent can immediately access `src/auth/login.ts` without any clone commands.
+
+**Example Request (legacy mountPoint):**
 
 ```json
 {
@@ -256,15 +280,18 @@ GET /api/tasks/:id
 ## Example: Delegating a Task (curl)
 
 ```bash
+# The repository is cloned automatically - the agent starts with it as /workspace
 curl -X POST https://commander.example.com/api/tasks \
   -H "Authorization: Bearer oc_sk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
     "body": "Fix the login bug in src/auth/login.ts - users are getting logged out after 5 minutes",
     "agentId": "claude",
-    "mountPoint": "my-project"
+    "repository": "my-org/my-project"
   }'
 ```
+
+> The agent receives the repository already cloned at `/workspace`. No need to include clone instructions in the task body.
 
 ## Example: Get Task by ID
 
@@ -414,16 +441,19 @@ ACCESS=$(curl -s -X POST https://commander.example.com/api/github/verify-access 
 HAS_PUSH=$(echo "$ACCESS" | jq -r '.permissions.push // false')
 
 if [ "$HAS_PUSH" = "true" ]; then
-  # 3. Create the task with confidence
+  # 3. Create the task - repository will be cloned automatically
+  #    Note: Do NOT tell the agent to clone - the repo is already available at /workspace
   curl -X POST https://commander.example.com/api/tasks \
     -H "Authorization: Bearer oc_sk_your_api_key" \
     -H "Content-Type: application/json" \
     -d '{
       "body": "Fix the bug in src/main.ts and push the changes",
       "agentId": "claude",
-      "mountPoint": "my-repo"
+      "repository": "my-org/my-repo"
     }'
 else
   echo "Server does not have push access to the repository"
 fi
 ```
+
+> **Tip:** Notice the task body says "Fix the bug in src/main.ts" — it does NOT say "clone the repo and fix...". The repository is automatically cloned and mounted as the agent's working directory before it starts.

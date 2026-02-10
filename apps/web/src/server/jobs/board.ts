@@ -41,6 +41,10 @@ app.use("/admin/queues", serverAdapter.getRouter());
 
 // other configurations of your server
 
-app.listen(4000, () => {
-  console.log("For the UI, open http://localhost:4000/admin/queues");
+const port = process.env.BULL_BOARD_PORT ?? 4000;
+
+app.listen(port, () => {
+  console.log(
+    `Bull Board UI available at http://localhost:${port}/admin/queues`,
+  );
 });

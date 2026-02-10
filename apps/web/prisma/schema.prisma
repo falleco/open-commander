@@ -168,7 +168,8 @@ model Task {
   status      TaskStatus    @default(todo)
   source      TaskSource    @default(web)
   agentId     AgentProvider?
-  mountPoint  String?       @map("mount_point") // Relative path within workspace to mount as /workspace
+  repository  String?       @map("repository") // GitHub repository in owner/repo format
+  mountPoint  String?       @map("mount_point") // Relative path within workspace to mount as /workspace (auto-set when repository is used)
   userId      String        @map("user_id")
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   attachments Json?         @default("[]")

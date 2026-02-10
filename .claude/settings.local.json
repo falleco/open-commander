@@ -10,7 +10,9 @@
       "Bash(bun run:*)",
       "Bash(bun install:*)",
       "Bash(bunx prisma generate:*)",
-      "Bash(bunx eslint:*)"
+      "Bash(bunx eslint:*)",
+      "Bash(bunx prisma migrate dev:*)",
+      "Bash(bunx tsc:*)"
     ]
   }
 }

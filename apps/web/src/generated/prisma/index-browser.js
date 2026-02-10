@@ -206,6 +206,7 @@ exports.Prisma.TaskScalarFieldEnum = {
   status: 'status',
   source: 'source',
   agentId: 'agentId',
+  repository: 'repository',
   mountPoint: 'mountPoint',
   userId: 'userId',
   attachments: 'attachments',

@@ -1,5 +1,5 @@
 {
-  "name": "open-commander",
+  "name": "@open-commander/root",
   "module": "index.ts",
   "type": "module",
   "private": true,
@@ -40,20 +40,6 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@better-fetch/fetch": "^1.1.21",
-    "@bull-board/api": "^6.17.0",
-    "@bull-board/express": "^6.17.0",
-    "@dotenvx/dotenvx": "^1.52.0",
-    "@tanstack/react-query": "^5.90.20",
-    "@trpc/client": "^11.9.0",
-    "@trpc/react-query": "^11.9.0",
-    "@trpc/server": "^11.9.0",
-    "agentation": "^1.3.2",
-    "bullmq": "^5.67.3",
-    "dotenv": "^17.2.4",
-    "express": "^5.2.1",
-    "ioredis": "^5.9.2",
-    "node-cron": "^4.2.1",
-    "superjson": "^2.2.6"
+    "@dotenvx/dotenvx": "^1.52.0"
   }
 }

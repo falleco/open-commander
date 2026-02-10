@@ -155,6 +155,7 @@ export async function GET(request: NextRequest) {
       body: string;
       status: TaskStatus;
       agentId: AgentProvider | null;
+      repository: string | null;
       mountPoint: string | null;
       attachments: unknown;
       createdAt: Date;
@@ -177,6 +178,7 @@ export async function GET(request: NextRequest) {
           body: true,
           status: true,
           agentId: true,
+          repository: true,
           mountPoint: true,
           attachments: true,
           createdAt: true,
@@ -258,9 +260,10 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as {
       body?: unknown;
       agentId?: unknown;
-      mountPoint?: unknown;
+      repository?: unknown;
+      mountPoint?: unknown; // Deprecated: use repository instead
     };
-    const { body: taskBody, agentId, mountPoint } = body;
+    const { body: taskBody, agentId, repository, mountPoint } = body;
 
     if (!taskBody || typeof taskBody !== "string" || taskBody.trim() === "") {
       await logApiCall(clientId, request, 400, startTime, "Missing task body");
@@ -286,7 +289,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate mountPoint if provided
+    // Validate repository if provided (format: owner/repo)
+    let validRepository: string | null = null;
+    if (repository && typeof repository === "string" && repository.trim()) {
+      const repoPattern = /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/;
+      if (!repoPattern.test(repository.trim())) {
+        await logApiCall(
+          clientId,
+          request,
+          400,
+          startTime,
+          "Invalid repository format",
+        );
+        return NextResponse.json(
+          {
+            error:
+              "Invalid repository format. Use 'owner/repo' format (e.g., 'octocat/hello-world')",
+          },
+          { status: 400 },
+        );
+      }
+      validRepository = repository.trim();
+    }
+
+    // Validate mountPoint if provided (deprecated, use repository instead)
     const validMountPoint =
       typeof mountPoint === "string" && mountPoint.trim() !== ""
         ? mountPoint.trim()
@@ -297,7 +323,8 @@ export async function POST(request: NextRequest) {
       data: {
         body: taskBody.trim(),
         agentId: validAgentId,
-        mountPoint: validMountPoint,
+        repository: validRepository,
+        mountPoint: validMountPoint, // Will be set by worker if repository is used
         userId: auth.user.id,
         source: "api",
         // If agentId is provided, start as "doing" since we'll enqueue immediately
@@ -306,7 +333,7 @@ export async function POST(request: NextRequest) {
     });
 
     console.log(
-      `[api/tasks] Task created: taskId=${task.id}, agentId=${validAgentId}`,
+      `[api/tasks] Task created: taskId=${task.id}, agentId=${validAgentId}, repository=${validRepository}`,
     );
 
     // If agentId is provided, create execution and enqueue immediately
@@ -329,6 +356,7 @@ export async function POST(request: NextRequest) {
         taskId: task.id,
         body: task.body,
         agentId: validAgentId,
+        repository: validRepository ?? undefined,
         mountPoint: validMountPoint ?? undefined,
       });
 

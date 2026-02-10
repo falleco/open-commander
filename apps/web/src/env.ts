@@ -20,12 +20,6 @@ export const env = createEnv({
     EGRESS_PROXY_CONTAINER_NAME: z
       .string()
       .default("open-commander-egress-proxy"),
-    AGENT_STATE_BASE_PATH: z
-      .string()
-      .default(path.resolve(process.cwd(), ".state")),
-    AGENT_CONFIG_BASE_PATH: z
-      .string()
-      .default(path.resolve(process.cwd(), "agent")),
     GITHUB_CLIENT_ID: z.string().optional(),
     GITHUB_CLIENT_SECRET: z.string().optional(),
     GOOGLE_CLIENT_ID: z.string().optional(),
@@ -74,8 +68,6 @@ export const env = createEnv({
     TTYD_EGRESS_PROXY_HOST: process.env.TTYD_EGRESS_PROXY_HOST,
     TTYD_EGRESS_PROXY_PORT: process.env.TTYD_EGRESS_PROXY_PORT,
     EGRESS_PROXY_CONTAINER_NAME: process.env.EGRESS_PROXY_CONTAINER_NAME,
-    AGENT_STATE_BASE_PATH: process.env.AGENT_STATE_BASE_PATH,
-    AGENT_CONFIG_BASE_PATH: process.env.AGENT_CONFIG_BASE_PATH,
     AGENT_WORKSPACE: process.env.AGENT_WORKSPACE,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_UPLOADTHING_URL_ROOT:

@@ -12,7 +12,8 @@ export interface CommandQueueParams {
   taskId: string;
   body: string;
   agentId: AgentProvider;
-  mountPoint?: string;
+  repository?: string; // GitHub repository in owner/repo format
+  mountPoint?: string; // Deprecated: use repository instead
 }
 
 export const commandQueue = new Queue<CommandQueueParams>(commandQueueName, {

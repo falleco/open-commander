@@ -156,10 +156,10 @@ export const sessionService = {
         options?.workspaceSuffix,
       );
       const { claudeJson, claudeDir } = await ensureClaudeState(
-        env.AGENT_STATE_BASE_PATH,
+        `${env.COMMANDER_BASE_PATH}/.state`,
       );
       const { agentsConfig } = await ensureAgentsConfig(
-        env.AGENT_CONFIG_BASE_PATH,
+        `${env.COMMANDER_BASE_PATH}/agents`,
       );
       await dockerService.ensureNetwork(env.TTYD_INTERNAL_NETWORK, {
         internal: true,

@@ -1,24 +1,11 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "open-commander",
       "dependencies": {
-        "@better-fetch/fetch": "^1.1.21",
-        "@bull-board/api": "^6.17.0",
-        "@bull-board/express": "^6.17.0",
         "@dotenvx/dotenvx": "^1.52.0",
-        "@tanstack/react-query": "^5.90.20",
-        "@trpc/client": "^11.9.0",
-        "@trpc/react-query": "^11.9.0",
-        "@trpc/server": "^11.9.0",
-        "agentation": "^1.3.2",
-        "bullmq": "^5.67.3",
-        "dotenv": "^17.2.4",
-        "express": "^5.2.1",
-        "ioredis": "^5.9.2",
-        "node-cron": "^4.2.1",
-        "superjson": "^2.2.6",
       },
       "devDependencies": {
         "@biomejs/biome": "2.3.8",
@@ -31,10 +18,13 @@
       },
     },
     "apps/web": {
-      "name": "web",
+      "name": "@open-commander/web",
       "version": "0.1.0",
       "dependencies": {
         "@appletosolutions/reactbits": "^1.0.3",
+        "@better-fetch/fetch": "^1.1.21",
+        "@bull-board/api": "^6.17.0",
+        "@bull-board/express": "^6.17.0",
         "@chakra-ui/react": "^3.31.0",
         "@emotion/react": "^11.14.0",
         "@emotion/styled": "^11.14.1",
@@ -47,6 +37,10 @@
         "@react-three/postprocessing": "^3.0.4",
         "@react-three/rapier": "^2.2.0",
         "@t3-oss/env-nextjs": "^0.13.0",
+        "@tanstack/react-query": "^5.90.20",
+        "@trpc/client": "^11.9.0",
+        "@trpc/react-query": "^11.9.0",
+        "@trpc/server": "^11.9.0",
         "@xterm/addon-attach": "^0.12.0",
         "@xterm/addon-clipboard": "^0.2.0",
         "@xterm/addon-fit": "^0.11.0",
@@ -61,17 +55,22 @@
         "@xterm/addon-web-links": "^0.12.0",
         "@xterm/addon-webgl": "^0.19.0",
         "better-auth": "^1.4.18",
+        "bullmq": "^5.67.3",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "dotenv": "^17.2.4",
+        "express": "^5.2.1",
         "framer-motion": "^12.30.0",
         "gl-matrix": "^3.4.4",
         "gsap": "^3.14.2",
         "input-otp": "^1.4.2",
         "install": "^0.13.0",
+        "ioredis": "^5.9.2",
         "lucide-react": "^0.563.0",
         "matter-js": "^0.20.0",
         "meshline": "^3.3.1",
         "next": "16.1.6",
+        "node-cron": "^4.2.1",
         "npm": "^11.8.0",
         "ogl": "^1.0.11",
         "postprocessing": "^6.38.2",
@@ -79,6 +78,7 @@
         "react": "19.2.3",
         "react-dom": "19.2.3",
         "react-error-boundary": "^6.1.0",
+        "superjson": "^2.2.6",
         "tailwind-merge": "^3.4.0",
         "three": "^0.182.0",
         "three-stdlib": "^2.36.1",
@@ -330,6 +330,8 @@
     "@noble/curves": ["@noble/curves@1.9.7", "", { "dependencies": { "@noble/hashes": "1.8.0" } }, "sha512-gbKGcRUYIjA3/zCCNaWDciTMFI0dCkvou3TL8Zmy5Nc7sJ47a0jtOeZoTaMxkuqRo9cRhjOdZJXegxYE5FN/xw=="],
 
     "@noble/hashes": ["@noble/hashes@2.0.1", "", {}, "sha512-XlOlEbQcE9fmuXxrVTXCTlG2nlRXa9Rj3rr5Ue/+tX+nmkgbX720YHh0VR3hBF9xDvwnb8D2shVGOwNx+ulArw=="],
+
+    "@open-commander/web": ["@open-commander/web@workspace:apps/web"],
 
     "@pandacss/is-valid-prop": ["@pandacss/is-valid-prop@1.8.1", "", {}, "sha512-gf2HTBCOboc65Jlb9swAjbffXSIv+A4vzSQ9iHyTCDLMcXTHYjPOQNliI36WkuQgR0pNXggBbQXGNaT9wKcrAw=="],
 
@@ -764,8 +766,6 @@
     "@zag-js/utils": ["@zag-js/utils@1.31.1", "", {}, "sha512-KLm0pmOtf4ydALbaVLboL7W98TDVxwVVLvSuvtRgV53XTjlsVopTRA5/Xmzq2NhWujDZAXv7bRV603NDgDcjSw=="],
 
     "accepts": ["accepts@2.0.0", "", { "dependencies": { "mime-types": "^3.0.0", "negotiator": "^1.0.0" } }, "sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng=="],
-
-    "agentation": ["agentation@1.3.2", "", { "peerDependencies": { "react": ">=18.0.0", "react-dom": ">=18.0.0" } }, "sha512-9yZ/3hTcNePr1asnMyipxAZU8nFdBibNfw7wTdLUd3ULTTQCp9QZX7Y5PTMzkYWX4fhqEI2LOjMCb3vkmZga9w=="],
 
     "aria-hidden": ["aria-hidden@1.2.6", "", { "dependencies": { "tslib": "^2.0.0" } }, "sha512-ik3ZgC9dY/lYVVM++OISsaYDeg1tb0VtP5uL3ouh1koGOaUMDPpbFIei4JkFimWUFPn90sbMNMXQAIVOlnYKJA=="],
 
@@ -1406,8 +1406,6 @@
     "valibot": ["valibot@1.2.0", "", { "peerDependencies": { "typescript": ">=5" }, "optionalPeers": ["typescript"] }, "sha512-mm1rxUsmOxzrwnX5arGS+U4T25RdvpPjPN4yR0u9pUBov9+zGVtO84tif1eY4r6zWxVxu3KzIyknJy3rxfRZZg=="],
 
     "vary": ["vary@1.1.2", "", {}, "sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg=="],
-
-    "web": ["web@workspace:apps/web"],
 
     "webgl-constants": ["webgl-constants@1.1.1", "", {}, "sha512-LkBXKjU5r9vAW7Gcu3T5u+5cvSvh5WwINdr0C+9jpzVB41cjQAP5ePArDtk/WHYdVj0GefCgM73BA7FlIiNtdg=="],
 
