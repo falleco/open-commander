@@ -1204,56 +1204,56 @@ export default function TerminalDashboardPage() {
                         );
                       })}
                     </div>
+                    {showBusyOverlay && (
+                      <div className="absolute inset-0 z-40 flex items-center justify-center bg-[rgb(10,12,20)]/85 backdrop-blur-sm">
+                        <div className="flex flex-col items-center gap-3 rounded-2xl border border-rose-500/30 bg-[rgb(23,25,34)]/90 px-6 py-5 text-center shadow-2xl">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-rose-500/30 bg-rose-500/10">
+                            <Cog
+                              className="h-6 w-6 animate-spin text-rose-400"
+                              strokeWidth={2.2}
+                              aria-hidden
+                            />
+                          </div>
+                          <p className="text-xs uppercase tracking-[0.3em] text-rose-300">
+                            {sessionBusyLabel}
+                          </p>
+                          <p className="text-sm text-slate-300">
+                            Preparing your session environment.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {showSessionErrorOverlay && (
+                      <div className="absolute inset-0 z-40 flex items-center justify-center bg-[rgb(10,12,20)]/85 backdrop-blur-sm">
+                        <div className="flex max-w-md flex-col items-center gap-3 rounded-2xl border border-rose-500/30 bg-[rgb(23,25,34)]/90 px-6 py-5 text-center text-slate-200 shadow-2xl">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-rose-500/30 bg-rose-500/10">
+                            <AlertTriangle
+                              className="h-6 w-6 text-rose-400"
+                              strokeWidth={2.2}
+                              aria-hidden
+                            />
+                          </div>
+                          <p className="text-xs uppercase tracking-[0.3em] text-rose-300">
+                            Connection error
+                          </p>
+                          <p className="text-sm text-slate-300">
+                            {selectedSessionErrorMessage}
+                          </p>
+                          <Button
+                            type="button"
+                            className="rounded-full bg-rose-500/90 px-6 py-2 text-sm font-semibold text-rose-50 transition hover:bg-rose-400"
+                            onClick={() => {
+                              if (selectedSessionId) {
+                                bumpResetToken(selectedSessionId);
+                              }
+                            }}
+                          >
+                            Try again
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  {showBusyOverlay && (
-                    <div className="absolute inset-0 z-40 flex items-center justify-center bg-[rgb(10,12,20)]/85 backdrop-blur-sm">
-                      <div className="flex flex-col items-center gap-3 rounded-2xl border border-rose-500/30 bg-[rgb(23,25,34)]/90 px-6 py-5 text-center shadow-2xl">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full border border-rose-500/30 bg-rose-500/10">
-                          <Cog
-                            className="h-6 w-6 animate-spin text-rose-400"
-                            strokeWidth={2.2}
-                            aria-hidden
-                          />
-                        </div>
-                        <p className="text-xs uppercase tracking-[0.3em] text-rose-300">
-                          {sessionBusyLabel}
-                        </p>
-                        <p className="text-sm text-slate-300">
-                          Preparing your session environment.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  {showSessionErrorOverlay && (
-                    <div className="absolute inset-0 z-40 flex items-center justify-center bg-[rgb(10,12,20)]/85 backdrop-blur-sm">
-                      <div className="flex max-w-md flex-col items-center gap-3 rounded-2xl border border-rose-500/30 bg-[rgb(23,25,34)]/90 px-6 py-5 text-center text-slate-200 shadow-2xl">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full border border-rose-500/30 bg-rose-500/10">
-                          <AlertTriangle
-                            className="h-6 w-6 text-rose-400"
-                            strokeWidth={2.2}
-                            aria-hidden
-                          />
-                        </div>
-                        <p className="text-xs uppercase tracking-[0.3em] text-rose-300">
-                          Connection error
-                        </p>
-                        <p className="text-sm text-slate-300">
-                          {selectedSessionErrorMessage}
-                        </p>
-                        <Button
-                          type="button"
-                          className="rounded-full bg-rose-500/90 px-6 py-2 text-sm font-semibold text-rose-50 transition hover:bg-rose-400"
-                          onClick={() => {
-                            if (selectedSessionId) {
-                              bumpResetToken(selectedSessionId);
-                            }
-                          }}
-                        >
-                          Try again
-                        </Button>
-                      </div>
-                    </div>
-                  )}
                 </>
               );
               return !isFullscreen ? (

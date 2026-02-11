@@ -8,7 +8,7 @@ import { DockerMountMode } from "./docker.types";
 
 const BASE_INGRESS_IMAGE = "nginx:alpine";
 const ingressStateDir = () =>
-  path.resolve(env.AGENT_STATE_BASE_PATH, "ingress");
+  path.resolve(env.COMMANDER_BASE_PATH, ".state", "ingress");
 
 const ingressConfigPath = (sessionId: string) => {
   const safeSessionId = normalizeContainerName(sessionId);

@@ -81,4 +81,5 @@
 .models.dev
 .r2.cloudflarestorage.com
 .amongclaws.com
-.ramon.com
+.tauri.app
+.openclaw.ai

@@ -1,4 +1,3 @@
-import path from "node:path";
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
@@ -33,7 +32,7 @@ export const env = createEnv({
       .default("postgresql://postgres:postgres@localhost:5432/commander_dev"),
     AGENT_WORKSPACE: z.string().optional(),
     DIND_CERTS_VOLUME: z.string().optional(),
-    COMMANDER_BASE_PATH: z.string().default(path.resolve(process.cwd())),
+    COMMANDER_BASE_PATH: z.string().default("."),
     REDIS_HOSTNAME: z.string().default("localhost"),
     REDIS_PORT: z.coerce.number().default(6379),
     REDIS_PASSWORD: z.string().optional(),

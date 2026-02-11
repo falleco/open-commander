@@ -8,6 +8,9 @@ CREATE TYPE "AgentProvider" AS ENUM ('opencode', 'claude', 'codex', 'cursor');
 CREATE TYPE "TaskStatus" AS ENUM ('todo', 'doing', 'done', 'canceled');
 
 -- CreateEnum
+CREATE TYPE "TaskSource" AS ENUM ('web', 'api');
+
+-- CreateEnum
 CREATE TYPE "TaskExecutionStatus" AS ENUM ('pending', 'running', 'completed', 'failed', 'needs_input');
 
 -- CreateTable
@@ -113,7 +116,9 @@ CREATE TABLE "tasks" (
     "title" TEXT,
     "body" TEXT NOT NULL,
     "status" "TaskStatus" NOT NULL DEFAULT 'todo',
+    "source" "TaskSource" NOT NULL DEFAULT 'web',
     "agentId" "AgentProvider",
+    "repository" TEXT,
     "mount_point" TEXT,
     "user_id" TEXT NOT NULL,
     "attachments" JSONB DEFAULT '[]',
@@ -129,6 +134,7 @@ CREATE TABLE "task_executions" (
     "task_id" TEXT NOT NULL,
     "status" "TaskExecutionStatus" NOT NULL DEFAULT 'pending',
     "agentId" "AgentProvider" NOT NULL,
+    "job_id" TEXT,
     "container_name" TEXT,
     "completed" BOOLEAN NOT NULL DEFAULT false,
     "needs_input" BOOLEAN NOT NULL DEFAULT false,
@@ -212,6 +218,9 @@ CREATE INDEX "tasks_user_id_idx" ON "tasks"("user_id");
 
 -- CreateIndex
 CREATE INDEX "tasks_user_id_status_idx" ON "tasks"("user_id", "status");
+
+-- CreateIndex
+CREATE INDEX "tasks_user_id_source_idx" ON "tasks"("user_id", "source");
 
 -- CreateIndex
 CREATE INDEX "task_executions_task_id_idx" ON "task_executions"("task_id");

@@ -12,7 +12,10 @@
       "Bash(bunx prisma generate:*)",
       "Bash(bunx eslint:*)",
       "Bash(bunx prisma migrate dev:*)",
-      "Bash(bunx tsc:*)"
+      "Bash(bunx tsc:*)",
+      "Bash(xargs:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }
