@@ -1,0 +1,16 @@
+{
+  "title": "Branch Management",
+  "pages": [
+    "virtual-branches",
+    "stacked-branches",
+    "commits",
+    "branch-lanes",
+    "rules",
+    "moving-branches",
+    "pushing-and-fetching",
+    "merging",
+    "upstream-integration",
+    "signing-commits",
+    "ai-assistance"
+  ]
+}

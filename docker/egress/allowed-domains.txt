@@ -87,3 +87,4 @@
 .reactbits.dev
 .react.dev
 .shadcn.com
+.gitbutler.com

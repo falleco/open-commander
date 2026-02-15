@@ -1,0 +1,40 @@
+---
+title: Branches Page
+description: Manage virtual branches, remote branches, and workspace targets in GitButler's branch management interface.
+---
+
+import ImageSection from "@/components/ImageSection"
+
+All of your branches - remote, local, and virtual / applied or not - are managed in the Branch Tab. This is where you can see all of your branches, apply them to your workspace, and manage your virtual branches.
+
+You can access the Branches tab by clicking on the "Branches" icon in the sidebar.
+
+The interface looks something like this:
+
+<ImageSection
+  className="mx-auto"
+  src="https://gitbutler-docs-images-public.s3.us-east-1.amazonaws.com/branch-tab.png"
+  width="800"
+  height="600"
+  subtitle="The branch tab"
+/>
+
+## Branch List
+
+The first pane on the left shows you the virtual branches and stacks that you have as well as the other branches that you have available (legacy git branches, remote branches and PRs).
+
+All of these branches can be converted into virtual branches by clicking them and then clicking the "Apply to workspace" button on the top of the branch view (middle pane).
+
+Local branches can also be fully deleted here.
+
+### Current Workspace Target
+
+The "Current workspace target" is the view of the target branch that you've set. It will show you essentially a `git log` of `origin/master` or whatever you set as your target branch, and it will show you if there are any commits upstream that you have not integrated locally yet. We will automatically check for new upstream changes every few minutes, but you can also click the update button to check immediately.
+
+<ImageSection
+  className="mx-auto"
+  src="https://gitbutler-docs-images-public.s3.us-east-1.amazonaws.com/workspace-target.png"
+  width="800"
+  height="600"
+  subtitle="workspace-target.png"
+/>

@@ -102,4 +102,19 @@ RUN curl -fsSL https://opencode.ai/install | bash
 RUN echo "Installing Cursor..."
 RUN curl https://cursor.com/install -fsS | bash
 
+#############
+# GITBUTLER #
+#############
+RUN echo "Installing GitButler..."
+USER root
+RUN curl -fsSL -o /tmp/gitbutler.deb https://releases.gitbutler.com/releases/release/0.19.1-2847/linux/aarch64/GitButler_0.19.1_arm64.deb \
+    && apt-get update \
+    && apt-get install -y /tmp/gitbutler.deb \
+    && rm -f /tmp/gitbutler.deb \
+    && rm -rf /var/lib/apt/lists/*
+USER $USERNAME
+RUN git config --global user.name "Open Commander" \
+    && git config --global user.email "me@opencommander.dev"
+RUN echo 'alias but="gitbutler-tauri"' >> $HOME/.zshrc
+
 WORKDIR /workspace

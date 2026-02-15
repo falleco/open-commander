@@ -1,0 +1,29 @@
+---
+title: "`but push`"
+description: "Push changes in a branch to remote."
+---
+
+`but push` will update the remote with the latest commits from the
+applied branch(es).
+
+Without a branch ID:
+- Interactive mode: Lists all branches with unpushed commits and prompts for selection
+- Non-interactive mode: Automatically pushes all branches with unpushed commits
+
+With a branch ID:
+- `but push bu` - push the branch with CLI ID "bu"
+- `but push feature-branch` - push the branch named "feature-branch"
+
+**Usage:** `but push [BRANCH_ID] [OPTIONS]`
+
+## Arguments
+
+* `<BRANCH_ID>` — Branch name or CLI ID to push. If not specified, will list all branches and prompt for selection in interactive mode
+
+## Options
+
+* `-f`, `--with-force` — Force push even if it's not fast-forward (default: `true`)
+* `-s`, `--skip-force-push-protection` — Skip force push protection checks
+* `-r`, `--run-hooks` — Run pre-push hooks (default: `true`)
+* `-d`, `--dry-run` — Show what would be pushed without actually pushing
+

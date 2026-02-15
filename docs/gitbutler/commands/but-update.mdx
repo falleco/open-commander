@@ -1,0 +1,47 @@
+---
+title: "`but update`"
+description: "Manage GitButler CLI and app updates."
+---
+
+Check for new versions, install updates, or suppress update notifications.
+
+**Usage:** `but update <COMMAND>`
+
+## Subcommands
+
+### `but update check`
+
+Check if a new version of the GitButler CLI is available
+
+**Usage:** `but update check`
+
+### `but update suppress`
+
+Suppress update notifications temporarily
+
+Hide update notifications for the specified number of days (1-30). Useful when you want to stay on a specific version temporarily.
+
+**Usage:** `but update suppress [DAYS]`
+
+**Arguments:**
+
+* `<DAYS>` — Number of days to suppress (1-30, default: 1)
+
+### `but update install`
+
+Install or update the GitButler desktop application (macOS only)
+
+Downloads and installs the GitButler desktop app. The CLI (but) is included with the app and will also be updated.
+
+By default, auto-detects your current channel (release/nightly) and installs the latest version for that channel.
+
+Note: Currently only supported on macOS. For other platforms, download from https://gitbutler.com/downloads
+
+**Usage:** `but update install [TARGET]`
+
+**Arguments:**
+
+* `<TARGET>` — What to install: "nightly", "release", or a version like "0.18.7"
+
+Examples: but update install           Auto-detect channel and install latest but update install nightly   Install latest nightly build but update install release   Install latest stable release but update install 0.18.7    Install specific version
+
