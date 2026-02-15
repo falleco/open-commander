@@ -1,5 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { portProxyService } from "@/lib/docker/port-proxy.service";
+import { sessionService } from "@/lib/docker/session.service";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import type { db as dbClient } from "@/server/db";
 
@@ -69,10 +71,23 @@ export const projectRouter = createTRPCRouter({
     .input(z.object({ id: projectIdSchema }))
     .mutation(async ({ ctx, input }) => {
       await ensureMyProject(ctx.db, input.id, ctx.session.user.id);
+
+      // Stop and remove every session belonging to this project
+      const sessions = await ctx.db.terminalSession.findMany({
+        where: { projectId: input.id, userId: ctx.session.user.id },
+        select: { id: true },
+      });
+      await Promise.allSettled(
+        sessions.map(async (s) => {
+          await sessionService.stop(s.id).catch(() => {});
+          await portProxyService.removeAll(s.id).catch(() => {});
+        }),
+      );
       await ctx.db.terminalSession.updateMany({
         where: { projectId: input.id },
-        data: { projectId: null },
+        data: { status: "stopped", projectId: null },
       });
+
       await ctx.db.project.delete({ where: { id: input.id } });
       return { deleted: true };
     }),

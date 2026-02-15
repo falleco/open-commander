@@ -17,10 +17,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { api } from "@/trpc/react";
+import { ConfirmDeleteProjectModal } from "./confirm-delete-project-modal";
 import { useProject } from "./project-context";
 
-type SessionMenuState = {
-  sessionId: string;
+type MenuState = {
+  id: string;
   x: number;
   y: number;
 } | null;
@@ -34,6 +35,7 @@ export function ProjectSessionsPanel() {
     selectedProjectId,
     selectedSessionId,
     setSelectedSessionId,
+    setSelectedProjectId,
     isPanelOpen,
     markSessionCreated,
   } = useProject();
@@ -84,8 +86,24 @@ export function ProjectSessionsPanel() {
     },
   });
 
-  const [sessionMenu, setSessionMenu] = useState<SessionMenuState>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const updateProjectMutation = api.project.update.useMutation({
+    onSuccess: () => {
+      void utils.project.list.invalidate();
+    },
+  });
+
+  const deleteProjectMutation = api.project.delete.useMutation({
+    onSuccess: () => {
+      void utils.project.list.invalidate();
+      setSelectedProjectId(null);
+    },
+  });
+
+  const [sessionMenu, setSessionMenu] = useState<MenuState>(null);
+  const [projectMenu, setProjectMenu] = useState<MenuState>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const sessionMenuRef = useRef<HTMLDivElement>(null);
+  const projectMenuRef = useRef<HTMLDivElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // Auto-open mobile panel when a project is selected
@@ -94,16 +112,35 @@ export function ProjectSessionsPanel() {
     else setMobileOpen(false);
   }, [isPanelOpen, selectedProjectId]);
 
+  // Close session menu on outside click
   useEffect(() => {
     if (!sessionMenu) return;
     const handleClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      if (
+        sessionMenuRef.current &&
+        !sessionMenuRef.current.contains(e.target as Node)
+      ) {
         setSessionMenu(null);
       }
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [sessionMenu]);
+
+  // Close project menu on outside click
+  useEffect(() => {
+    if (!projectMenu) return;
+    const handleClick = (e: MouseEvent) => {
+      if (
+        projectMenuRef.current &&
+        !projectMenuRef.current.contains(e.target as Node)
+      ) {
+        setProjectMenu(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [projectMenu]);
 
   const handleCreateSession = useCallback(() => {
     if (!selectedProjectId) return;
@@ -132,6 +169,29 @@ export function ProjectSessionsPanel() {
     },
     [removeSessionMutation],
   );
+
+  const handleRenameProject = useCallback(() => {
+    setProjectMenu(null);
+    if (!selectedProjectId || !project) return;
+    const newName = window.prompt("Rename project", project.name);
+    if (newName?.trim()) {
+      updateProjectMutation.mutate({
+        id: selectedProjectId,
+        name: newName.trim(),
+      });
+    }
+  }, [selectedProjectId, project, updateProjectMutation]);
+
+  const handleDeleteProject = useCallback(() => {
+    setProjectMenu(null);
+    setDeleteConfirmOpen(true);
+  }, []);
+
+  const confirmDeleteProject = useCallback(() => {
+    if (!selectedProjectId) return;
+    setDeleteConfirmOpen(false);
+    deleteProjectMutation.mutate({ id: selectedProjectId });
+  }, [selectedProjectId, deleteProjectMutation]);
 
   const dismissCreateError = useCallback(() => {
     createSessionMutation.reset();
@@ -182,6 +242,29 @@ export function ProjectSessionsPanel() {
                 </button>
               </TooltipTrigger>
               <TooltipContent side="right">New Session</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
+                  aria-label="Project options"
+                  onClick={(e) => {
+                    setProjectMenu({
+                      id: selectedProjectId!,
+                      x: e.clientX,
+                      y: e.clientY,
+                    });
+                  }}
+                >
+                  <MoreVertical
+                    className="h-3.5 w-3.5"
+                    strokeWidth={2}
+                    aria-hidden
+                  />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Project Options</TooltipContent>
             </Tooltip>
           </TooltipProvider>
           {/* Mobile close */}
@@ -248,6 +331,32 @@ export function ProjectSessionsPanel() {
         </div>
       )}
 
+      {/* Inline error: delete project */}
+      {deleteProjectMutation.isError && (
+        <div className="mx-2 mt-2 flex items-start gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2">
+          <AlertTriangle
+            className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-400"
+            aria-hidden
+          />
+          <div className="flex-1">
+            <p className="text-xs font-medium text-rose-200">
+              Failed to delete project
+            </p>
+            <p className="mt-0.5 text-xs text-rose-300/80">
+              {deleteProjectMutation.error?.message ?? "Unknown error."}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="shrink-0 text-rose-400 hover:text-rose-200"
+            onClick={() => deleteProjectMutation.reset()}
+            aria-label="Dismiss"
+          >
+            <X className="h-3 w-3" strokeWidth={2} aria-hidden />
+          </button>
+        </div>
+      )}
+
       {/* Sessions list */}
       <div className="flex flex-1 flex-col overflow-y-auto px-2 py-2">
         {sessionsQuery.isLoading ? (
@@ -300,7 +409,7 @@ export function ProjectSessionsPanel() {
                     onClick={(e) => {
                       e.stopPropagation();
                       setSessionMenu({
-                        sessionId: session.id,
+                        id: session.id,
                         x: e.clientX,
                         y: e.clientY,
                       });
@@ -353,10 +462,10 @@ export function ProjectSessionsPanel() {
         </aside>
       </div>
 
-      {/* Context menu — rendered once at top level so ref + z-index work reliably */}
+      {/* Session context menu */}
       {sessionMenu && (
         <div
-          ref={menuRef}
+          ref={sessionMenuRef}
           className="fixed z-[100] min-w-[140px] rounded-lg border border-white/10 bg-(--oc-panel-strong) py-1 shadow-xl"
           style={{ left: sessionMenu.x, top: sessionMenu.y }}
         >
@@ -364,7 +473,7 @@ export function ProjectSessionsPanel() {
             type="button"
             className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-slate-200 transition hover:bg-white/10"
             onClick={() => {
-              const s = sessions.find((s) => s.id === sessionMenu.sessionId);
+              const s = sessions.find((s) => s.id === sessionMenu.id);
               if (s) handleRename(s.id, s.name);
             }}
           >
@@ -374,13 +483,47 @@ export function ProjectSessionsPanel() {
           <button
             type="button"
             className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-rose-300 transition hover:bg-rose-500/10"
-            onClick={() => handleRemove(sessionMenu.sessionId)}
+            onClick={() => handleRemove(sessionMenu.id)}
           >
             <Trash2 className="h-3.5 w-3.5" strokeWidth={1.6} aria-hidden />
             Remove
           </button>
         </div>
       )}
+
+      {/* Project context menu */}
+      {projectMenu && (
+        <div
+          ref={projectMenuRef}
+          className="fixed z-[100] min-w-[140px] rounded-lg border border-white/10 bg-(--oc-panel-strong) py-1 shadow-xl"
+          style={{ left: projectMenu.x, top: projectMenu.y }}
+        >
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-slate-200 transition hover:bg-white/10"
+            onClick={handleRenameProject}
+          >
+            <Pencil className="h-3.5 w-3.5" strokeWidth={1.6} aria-hidden />
+            Rename
+          </button>
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-rose-300 transition hover:bg-rose-500/10"
+            onClick={handleDeleteProject}
+          >
+            <Trash2 className="h-3.5 w-3.5" strokeWidth={1.6} aria-hidden />
+            Delete
+          </button>
+        </div>
+      )}
+
+      {/* Delete project confirmation modal */}
+      <ConfirmDeleteProjectModal
+        open={deleteConfirmOpen}
+        projectName={project?.name ?? ""}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={confirmDeleteProject}
+      />
     </>
   );
 }

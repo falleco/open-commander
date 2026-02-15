@@ -198,8 +198,8 @@ export function TerminalPane({
         event.preventDefault();
         event.stopPropagation();
 
-        const base = event.deltaMode === 1 ? 1 : 40;
-        const magnitude = Math.max(1, Math.round(Math.abs(event.deltaY) / base));
+        const base = event.deltaMode === 1 ? 20 : 40;
+        const magnitude = Math.max(1, Math.round(Math.abs(event.deltaY) / base)) / 20;
         const direction = event.deltaY > 0 ? 1 : -1;
 
         if (activeTerminal.buffer.active.type === "alternate") {
