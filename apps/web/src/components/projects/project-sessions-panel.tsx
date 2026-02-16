@@ -28,7 +28,7 @@ type MenuState = {
 
 /**
  * Secondary sidebar panel listing sessions for the selected project.
- * Renders on both desktop (permanent aside) and mobile (slide-over).
+ * Desktop only — mobile uses the inline accordion in AppSidebar.
  */
 export function ProjectSessionsPanel() {
   const {
@@ -104,13 +104,6 @@ export function ProjectSessionsPanel() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const sessionMenuRef = useRef<HTMLDivElement>(null);
   const projectMenuRef = useRef<HTMLDivElement>(null);
-  const [mobileOpen, setMobileOpen] = useState(false);
-
-  // Auto-open mobile panel when a project is selected
-  useEffect(() => {
-    if (isPanelOpen) setMobileOpen(true);
-    else setMobileOpen(false);
-  }, [isPanelOpen, selectedProjectId]);
 
   // Close session menu on outside click
   useEffect(() => {
@@ -222,31 +215,6 @@ export function ProjectSessionsPanel() {
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-emerald-400/10 hover:text-emerald-300"
-                  aria-label="New session"
-                  onClick={handleCreateSession}
-                  disabled={createSessionMutation.isPending}
-                >
-                  {createSessionMutation.isPending ? (
-                    <Loader2
-                      className="h-3.5 w-3.5 animate-spin"
-                      aria-hidden
-                    />
-                  ) : (
-                    <Plus
-                      className="h-3.5 w-3.5"
-                      strokeWidth={2}
-                      aria-hidden
-                    />
-                  )}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right">New Session</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
                   className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
                   aria-label="Project options"
                   onClick={(e) => {
@@ -267,15 +235,6 @@ export function ProjectSessionsPanel() {
               <TooltipContent side="right">Project Options</TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          {/* Mobile close */}
-          <button
-            type="button"
-            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200 md:hidden"
-            aria-label="Close panel"
-            onClick={() => setMobileOpen(false)}
-          >
-            <X className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-          </button>
         </div>
       </div>
 
@@ -359,25 +318,29 @@ export function ProjectSessionsPanel() {
 
       {/* Sessions list */}
       <div className="flex flex-1 flex-col overflow-y-auto px-2 py-2">
-        {sessionsQuery.isLoading ? (
-          <div className="flex items-center gap-2 px-2 py-4 text-xs text-slate-500">
-            <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
-            Loading...
-          </div>
-        ) : sessions.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 px-2 py-8 text-center">
-            <p className="text-xs text-slate-500">No sessions yet.</p>
-            <button
-              type="button"
-              className="text-xs text-emerald-400 transition hover:text-emerald-300"
-              onClick={handleCreateSession}
-            >
-              Create one to start.
-            </button>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-0.5">
-            {sessions.map((session) => {
+        <div className="flex flex-col gap-0.5">
+          {/* Create session — always first */}
+          <button
+            type="button"
+            className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-emerald-400 transition-colors hover:bg-emerald-400/10 hover:text-emerald-300"
+            onClick={handleCreateSession}
+            disabled={createSessionMutation.isPending}
+          >
+            {createSessionMutation.isPending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+            ) : (
+              <Plus className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+            )}
+            Create Session
+          </button>
+
+          {sessionsQuery.isLoading ? (
+            <div className="flex items-center gap-2 px-2 py-4 text-xs text-slate-500">
+              <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+              Loading...
+            </div>
+          ) : (
+            sessions.map((session) => {
               const isActive = session.id === selectedSessionId;
               return (
                 <div
@@ -393,7 +356,6 @@ export function ProjectSessionsPanel() {
                     className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left"
                     onClick={() => {
                       setSelectedSessionId(session.id);
-                      setMobileOpen(false);
                     }}
                   >
                     <span
@@ -423,11 +385,10 @@ export function ProjectSessionsPanel() {
                   </button>
                 </div>
               );
-            })}
-          </div>
-        )}
+            })
+          )}
+        </div>
       </div>
-
     </>
   );
 
@@ -437,30 +398,6 @@ export function ProjectSessionsPanel() {
       <aside className="hidden w-56 flex-col border-r border-purple-500/25 bg-(--oc-panel) md:flex">
         {panelContent}
       </aside>
-
-      {/* Mobile: slide-over drawer */}
-      <div
-        className={`fixed inset-0 z-40 md:hidden ${
-          mobileOpen ? "pointer-events-auto" : "pointer-events-none"
-        }`}
-        aria-hidden={!mobileOpen}
-      >
-        <button
-          type="button"
-          className={`absolute inset-0 bg-black/60 transition-opacity duration-200 ${
-            mobileOpen ? "opacity-100" : "opacity-0"
-          }`}
-          aria-label="Close sessions panel"
-          onClick={() => setMobileOpen(false)}
-        />
-        <aside
-          className={`relative z-10 flex h-full w-72 flex-col border-r border-purple-500/25 bg-(--oc-panel) backdrop-blur transition-transform duration-200 ease-out ${
-            mobileOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
-        >
-          {panelContent}
-        </aside>
-      </div>
 
       {/* Session context menu */}
       {sessionMenu && (

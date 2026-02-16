@@ -1,7 +1,9 @@
 "use client";
 
 import {
+  ChevronDown,
   Keyboard,
+  Loader2,
   Menu,
   Plus,
   Settings,
@@ -12,6 +14,7 @@ import { usePathname } from "next/navigation";
 import {
   createContext,
   type ReactNode,
+  useCallback,
   useContext,
   useMemo,
   useState,
@@ -95,17 +98,61 @@ export function AppSidebar() {
   const {
     selectedProjectId,
     setSelectedProjectId,
+    selectedSessionId,
+    setSelectedSessionId,
     setCreateModalOpen,
+    markSessionCreated,
   } = useProject();
+  const utils = api.useUtils();
   const activePage = pathname.startsWith("/settings") ? "settings" : null;
 
   const projectsQuery = api.project.list.useQuery();
   const projects = projectsQuery.data ?? [];
 
+  // Mobile accordion: track which project is expanded
+  const [expandedProjectId, setExpandedProjectId] = useState<string | null>(
+    null,
+  );
+
+  const sessionsQuery = api.project.listSessions.useQuery(
+    { projectId: expandedProjectId ?? "" },
+    { enabled: Boolean(expandedProjectId), refetchInterval: 5000 },
+  );
+  const mobileSessions = sessionsQuery.data ?? [];
+
+  const createSessionMutation = api.project.createSession.useMutation({
+    onSuccess: (session) => {
+      void utils.project.listSessions.invalidate({
+        projectId: expandedProjectId ?? "",
+      });
+      markSessionCreated(session.id);
+      setSelectedSessionId(session.id);
+      setMobileOpen(false);
+    },
+  });
+
+  const handleMobileCreateSession = useCallback(() => {
+    if (!expandedProjectId) return;
+    const count = mobileSessions.length + 1;
+    createSessionMutation.mutate({
+      projectId: expandedProjectId,
+      name: `Session ${count}`,
+    });
+  }, [expandedProjectId, mobileSessions.length, createSessionMutation]);
+
   const handleProjectClick = (projectId: string) => {
     if (selectedProjectId === projectId) {
       setSelectedProjectId(null);
     } else {
+      setSelectedProjectId(projectId);
+    }
+  };
+
+  const handleMobileProjectClick = (projectId: string) => {
+    if (expandedProjectId === projectId) {
+      setExpandedProjectId(null);
+    } else {
+      setExpandedProjectId(projectId);
       setSelectedProjectId(projectId);
     }
   };
@@ -160,26 +207,104 @@ export function AppSidebar() {
                   No projects yet.
                 </p>
               ) : (
-                projects.map((project: { id: string; name: string }) => (
-                  <button
-                    key={project.id}
-                    type="button"
-                    className={`${mobileLinkBase} w-full text-left ${
-                      selectedProjectId === project.id
-                        ? "bg-emerald-400/15 text-emerald-200"
-                        : ""
-                    }`}
-                    onClick={() => {
-                      handleProjectClick(project.id);
-                      setMobileOpen(false);
-                    }}
-                  >
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-white/10 text-[10px] font-bold uppercase">
-                      {project.name.slice(0, 2)}
-                    </span>
-                    <span className="truncate">{project.name}</span>
-                  </button>
-                ))
+                projects.map((project: { id: string; name: string }) => {
+                  const isExpanded = expandedProjectId === project.id;
+                  return (
+                    <div key={project.id}>
+                      <button
+                        type="button"
+                        className={`${mobileLinkBase} w-full text-left ${
+                          selectedProjectId === project.id
+                            ? "bg-emerald-400/15 text-emerald-200"
+                            : ""
+                        }`}
+                        onClick={() => handleMobileProjectClick(project.id)}
+                      >
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-white/10 text-[10px] font-bold uppercase">
+                          {project.name.slice(0, 2)}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate">
+                          {project.name}
+                        </span>
+                        <ChevronDown
+                          className={`h-4 w-4 shrink-0 text-slate-500 transition-transform duration-150 ${isExpanded ? "rotate-0" : "-rotate-90"}`}
+                          strokeWidth={1.6}
+                          aria-hidden
+                        />
+                      </button>
+
+                      {isExpanded && (
+                        <div className="flex flex-col gap-0.5 py-1 pl-5">
+                          {/* Create session — always first */}
+                          <button
+                            type="button"
+                            className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-emerald-400 transition-colors hover:bg-emerald-400/10 hover:text-emerald-300"
+                            onClick={handleMobileCreateSession}
+                            disabled={createSessionMutation.isPending}
+                          >
+                            {createSessionMutation.isPending ? (
+                              <Loader2
+                                className="h-3.5 w-3.5 animate-spin"
+                                aria-hidden
+                              />
+                            ) : (
+                              <Plus
+                                className="h-3.5 w-3.5"
+                                strokeWidth={2}
+                                aria-hidden
+                              />
+                            )}
+                            Create Session
+                          </button>
+
+                          {sessionsQuery.isLoading ? (
+                            <div className="flex items-center gap-2 px-3 py-2 text-xs text-slate-500">
+                              <Loader2
+                                className="h-3 w-3 animate-spin"
+                                aria-hidden
+                              />
+                              Loading…
+                            </div>
+                          ) : (
+                            mobileSessions.map((session) => {
+                              const isActive = session.id === selectedSessionId;
+                              const dotColor =
+                                session.status === "running"
+                                  ? "bg-emerald-400"
+                                  : session.status === "starting" ||
+                                      session.status === "pending"
+                                    ? "bg-yellow-400"
+                                    : "bg-slate-500";
+                              return (
+                                <button
+                                  key={session.id}
+                                  type="button"
+                                  className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                                    isActive
+                                      ? "bg-emerald-400/15 text-emerald-200"
+                                      : "text-slate-300 hover:bg-white/5 hover:text-slate-100"
+                                  }`}
+                                  onClick={() => {
+                                    setSelectedSessionId(session.id);
+                                    setMobileOpen(false);
+                                  }}
+                                >
+                                  <span
+                                    className={`h-2 w-2 shrink-0 rounded-full ${dotColor}`}
+                                    aria-hidden
+                                  />
+                                  <span className="truncate">
+                                    {session.name}
+                                  </span>
+                                </button>
+                              );
+                            })
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
               )}
               <button
                 type="button"
