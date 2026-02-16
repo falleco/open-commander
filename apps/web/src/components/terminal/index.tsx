@@ -18,6 +18,7 @@ export function TerminalPane({
   className,
   wsUrl: _wsUrl,
   errorMessage,
+  autoCommand,
   onStatusChange,
   onErrorMessage,
   onContainerName,
@@ -46,6 +47,8 @@ export function TerminalPane({
     ((options?: { reset?: boolean }) => Promise<void>) | null
   >(null);
   const sendRawInputRef = useRef<((payload: string) => void) | null>(null);
+  const autoCommandFiredRef = useRef(false);
+  const mountedRef = useRef(true);
   const startSessionMutation = api.terminal.startSession.useMutation();
 
   const log = useCallback(
@@ -70,6 +73,13 @@ export function TerminalPane({
     },
     [onErrorMessage],
   );
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   if (!terminalReadyRef.current) {
     terminalReadyRef.current = new Promise((resolve) => {
@@ -186,9 +196,14 @@ export function TerminalPane({
 
       /**
        * Handle mouse wheel for scrolling in both normal and alternate buffer modes.
+       * Uses capture phase + stopImmediatePropagation to override xterm's built-in
+       * scroll handler, giving us full control over scroll speed.
        * In alternate buffer (tmux), sends X10 mouse sequences.
        * In normal buffer, uses xterm's native scrollLines.
        */
+      let scrollAccumulator = 0;
+      const SCROLL_THRESHOLD = 25;
+
       const handleWheel = (event: WheelEvent) => {
         const activeTerminal = terminalRef.current;
         if (!activeTerminal) return;
@@ -196,11 +211,15 @@ export function TerminalPane({
         if (event.deltaY === 0) return;
 
         event.preventDefault();
-        event.stopPropagation();
+        event.stopImmediatePropagation();
 
-        const base = event.deltaMode === 1 ? 20 : 40;
-        const magnitude = Math.max(1, Math.round(Math.abs(event.deltaY) / base)) / 20;
-        const direction = event.deltaY > 0 ? 1 : -1;
+        scrollAccumulator += event.deltaY;
+
+        if (Math.abs(scrollAccumulator) < SCROLL_THRESHOLD) return;
+
+        const direction = scrollAccumulator > 0 ? 1 : -1;
+        const lines = Math.floor(Math.abs(scrollAccumulator) / SCROLL_THRESHOLD);
+        scrollAccumulator = scrollAccumulator % SCROLL_THRESHOLD;
 
         if (activeTerminal.buffer.active.type === "alternate") {
           const sendRaw = sendRawInputRef.current;
@@ -216,17 +235,17 @@ export function TerminalPane({
           const button = direction < 0 ? 64 : 65;
           const sequence = `\x1b[M${String.fromCharCode(button + 32)}${String.fromCharCode(x + 32)}${String.fromCharCode(y + 32)}`;
 
-          for (let i = 0; i < magnitude; i++) {
+          for (let i = 0; i < lines; i++) {
             sendRaw(sequence);
           }
           return;
         }
 
-        activeTerminal.scrollLines(direction * magnitude);
+        activeTerminal.scrollLines(direction * lines);
       };
 
       const wheelTarget = terminal.element ?? terminalHost;
-      wheelTarget.addEventListener("wheel", handleWheel, { passive: false });
+      wheelTarget.addEventListener("wheel", handleWheel, { passive: false, capture: true });
       /**
        * Custom text selection handling that bypasses tmux mouse capture.
        * Intercepts mouse events and uses xterm's selection API directly.
@@ -298,7 +317,7 @@ export function TerminalPane({
       document.addEventListener("mouseup", handleMouseUp, { capture: true });
 
       removeWheelListener = () => {
-        wheelTarget.removeEventListener("wheel", handleWheel);
+        wheelTarget.removeEventListener("wheel", handleWheel, { capture: true });
         wheelTarget.removeEventListener("mousedown", handleMouseDown, { capture: true });
         document.removeEventListener("mousemove", handleMouseMove, { capture: true });
         document.removeEventListener("mouseup", handleMouseUp, { capture: true });
@@ -664,9 +683,18 @@ export function TerminalPane({
           sendResize(refreshCols, refreshRows);
           log(`ws: resize refresh cols=${refreshCols} rows=${refreshRows}`);
         }, 200);
+
+        if (autoCommand && !autoCommandFiredRef.current) {
+          autoCommandFiredRef.current = true;
+          window.setTimeout(() => {
+            log(`auto-execute: sending "${autoCommand}"`);
+            sendInput(`${autoCommand}\n`);
+          }, 500);
+        }
       }
     },
     [
+      autoCommand,
       log,
       onConnected,
       onContainerName,
@@ -727,7 +755,8 @@ export function TerminalPane({
       let lastError: string | null = null;
 
       for (let attempt = 0; attempt < maxOuterAttempts; attempt += 1) {
-        if (connectionIdRef.current !== connectionId) return;
+        if (connectionIdRef.current !== connectionId || !mountedRef.current)
+          return;
         log(
           `startSession: outer attempt ${attempt + 1}/${maxOuterAttempts}`,
         );
@@ -743,6 +772,7 @@ export function TerminalPane({
           );
 
           if (attempt < maxOuterAttempts - 1) {
+            if (!mountedRef.current) return;
             // Keep status as "starting" so the connecting overlay stays visible
             setStatus("starting");
             setError(null);
@@ -750,6 +780,7 @@ export function TerminalPane({
             await new Promise((resolve) =>
               window.setTimeout(resolve, delay),
             );
+            if (!mountedRef.current) return;
           }
         }
       }
@@ -778,6 +809,7 @@ export function TerminalPane({
       socketRef.current?.close();
       socketRef.current = null;
       sessionEndedRef.current = false;
+      autoCommandFiredRef.current = false;
       setStatus("idle");
       setError(null);
       onContainerName(null);
@@ -785,6 +817,7 @@ export function TerminalPane({
       onSessionEnded(false, null);
       return;
     }
+    autoCommandFiredRef.current = false;
     void startSessionRef.current?.();
   }, [
     onContainerName,

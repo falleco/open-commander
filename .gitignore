@@ -37,3 +37,9 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .state/*
 !.state/.gitkeep
 !.state/claude/.gitkeep
+
+# Agents
+.claude
+.codex
+.cursor
+.opencode

@@ -7,6 +7,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { ShortcutsModal } from "./shortcuts-modal";
@@ -31,7 +32,12 @@ const GLOBAL_SHORTCUTS: ShortcutItem[] = [
 type ShortcutsContextValue = {
   openShortcuts: (focusSearch?: boolean) => void;
   closeShortcuts: () => void;
+  /** @deprecated Use registerShortcuts / unregisterShortcuts instead. */
   setPageShortcuts: (shortcuts: ShortcutItem[]) => void;
+  /** Register shortcuts under a unique key. Multiple sources are merged. */
+  registerShortcuts: (key: string, shortcuts: ShortcutItem[]) => void;
+  /** Remove shortcuts registered under the given key. */
+  unregisterShortcuts: (key: string) => void;
   /** True when the shortcuts modal is open (e.g. so pages skip handling their shortcuts). */
   shortcutsOpen: boolean;
 };
@@ -57,7 +63,11 @@ type ShortcutsProviderProps = {
 export function ShortcutsProvider({ children }: ShortcutsProviderProps) {
   const [open, setOpen] = useState(false);
   const [focusSearchOnOpen, setFocusSearchOnOpen] = useState(false);
-  const [pageShortcuts, setPageShortcutsState] = useState<ShortcutItem[]>([]);
+  const [shortcutSources, setShortcutSources] = useState<
+    Record<string, ShortcutItem[]>
+  >({});
+  const shortcutSourcesRef = useRef(shortcutSources);
+  shortcutSourcesRef.current = shortcutSources;
 
   const openShortcuts = useCallback((focusSearch = false) => {
     setFocusSearchOnOpen(focusSearch);
@@ -66,13 +76,39 @@ export function ShortcutsProvider({ children }: ShortcutsProviderProps) {
 
   const closeShortcuts = useCallback(() => setOpen(false), []);
 
-  const setPageShortcuts = useCallback((shortcuts: ShortcutItem[]) => {
-    setPageShortcutsState(shortcuts);
+  const registerShortcuts = useCallback(
+    (key: string, shortcuts: ShortcutItem[]) => {
+      setShortcutSources((prev) => ({ ...prev, [key]: shortcuts }));
+    },
+    [],
+  );
+
+  const unregisterShortcuts = useCallback((key: string) => {
+    setShortcutSources((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
   }, []);
 
+  /** Backwards-compat wrapper: registers under the "page" key. */
+  const setPageShortcuts = useCallback(
+    (shortcuts: ShortcutItem[]) => {
+      if (shortcuts.length === 0) {
+        unregisterShortcuts("page");
+      } else {
+        registerShortcuts("page", shortcuts);
+      }
+    },
+    [registerShortcuts, unregisterShortcuts],
+  );
+
   const allShortcuts = useMemo(
-    () => [...GLOBAL_SHORTCUTS, ...pageShortcuts],
-    [pageShortcuts],
+    () => [
+      ...GLOBAL_SHORTCUTS,
+      ...Object.values(shortcutSources).flat(),
+    ],
+    [shortcutSources],
   );
 
   useEffect(() => {
@@ -92,9 +128,11 @@ export function ShortcutsProvider({ children }: ShortcutsProviderProps) {
       openShortcuts,
       closeShortcuts,
       setPageShortcuts,
+      registerShortcuts,
+      unregisterShortcuts,
       shortcutsOpen: open,
     }),
-    [openShortcuts, closeShortcuts, setPageShortcuts, open],
+    [openShortcuts, closeShortcuts, setPageShortcuts, registerShortcuts, unregisterShortcuts, open],
   );
 
   return (

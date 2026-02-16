@@ -84,6 +84,10 @@ body {
     sans-serif;
 }
 
+button {
+  cursor: pointer;
+}
+
 @keyframes oc-shake {
   0%,
   100% {

@@ -19,6 +19,8 @@ export type TerminalPaneProps = {
   className?: string;
   wsUrl: string | null;
   errorMessage: string | null;
+  /** Command to auto-execute once after the first successful handshake. */
+  autoCommand?: string | null;
   onStatusChange: (status: TerminalStatus) => void;
   onErrorMessage: (message: string | null) => void;
   onContainerName: (name: string | null) => void;

@@ -1,14 +1,17 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { AGENT_IDS } from "@/lib/agent-preferences";
 import { portProxyService } from "@/lib/docker/port-proxy.service";
 import { sessionService } from "@/lib/docker/session.service";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import type { db as dbClient } from "@/server/db";
+import type { AgentProvider } from "@/generated/prisma";
 
 const projectIdSchema = z.string().min(1);
 const projectNameSchema = z.string().trim().min(1).max(80);
 const folderSchema = z.string().trim().min(1).max(120);
 const sessionNameSchema = z.string().trim().min(1).max(120);
+const agentIdSchema = z.enum(AGENT_IDS as unknown as [string, ...string[]]);
 
 const ensureMyProject = async (
   db: typeof dbClient,
@@ -40,6 +43,7 @@ export const projectRouter = createTRPCRouter({
       z.object({
         name: projectNameSchema,
         folder: folderSchema,
+        defaultCliId: agentIdSchema.nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -47,6 +51,7 @@ export const projectRouter = createTRPCRouter({
         data: {
           name: input.name,
           folder: input.folder,
+          defaultCliId: (input.defaultCliId as AgentProvider) ?? null,
           user: { connect: { id: ctx.session.user.id } },
         },
       });
@@ -57,13 +62,19 @@ export const projectRouter = createTRPCRouter({
       z.object({
         id: projectIdSchema,
         name: projectNameSchema,
+        defaultCliId: agentIdSchema.nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       await ensureMyProject(ctx.db, input.id, ctx.session.user.id);
       return ctx.db.project.update({
         where: { id: input.id },
-        data: { name: input.name },
+        data: {
+          name: input.name,
+          ...(input.defaultCliId !== undefined
+            ? { defaultCliId: (input.defaultCliId as AgentProvider) ?? null }
+            : {}),
+        },
       });
     }),
 

@@ -141,7 +141,7 @@ export const sessionService = {
     const session = await db.terminalSession.findUnique({
       where: { id: sessionId, userId },
     });
-    if (!session) {
+    if (!session || session.status === "stopped") {
       throw new TRPCError({
         code: "NOT_FOUND",
         message: "Session not found.",
@@ -263,6 +263,14 @@ export const sessionService = {
                   target: "/home/commander/.claude.json",
                 },
                 { source: claudeDir, target: "/home/commander/.claude" },
+                {
+                  source: `${env.COMMANDER_BASE_PATH}/.state/codex`,
+                  target: "/home/commander/.codex",
+                },
+                {
+                  source: `${env.COMMANDER_BASE_PATH}/.state/cursor`,
+                  target: "/home/commander/.cursor",
+                },
                 {
                   source: agentsConfig,
                   target: "/home/commander/.commander",

@@ -11,6 +11,11 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  useShortcuts,
+  modKey,
+} from "@/components/shortcuts/shortcuts-context";
+import type { ShortcutItem } from "@/components/shortcuts/shortcuts-types";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -201,6 +206,38 @@ export function ProjectSessionsPanel() {
     removeSessionMutation.reset();
   }, [removeSessionMutation]);
 
+  const { shortcutsOpen, registerShortcuts, unregisterShortcuts } =
+    useShortcuts();
+
+  // Register project-session shortcuts for the shortcuts modal.
+  useEffect(() => {
+    if (!isPanelOpen) return;
+    registerShortcuts("project", [
+      {
+        id: "new-project-session",
+        keys: [modKey, "Shift", "A"],
+        description: "New session in project",
+        category: "Project",
+      },
+    ]);
+    return () => unregisterShortcuts("project");
+  }, [isPanelOpen, registerShortcuts, unregisterShortcuts]);
+
+  // Handle Cmd/Ctrl+Shift+A to create a new session in the project.
+  useEffect(() => {
+    if (!isPanelOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (shortcutsOpen) return;
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.shiftKey && e.key.toLowerCase() === "a") {
+        e.preventDefault();
+        handleCreateSession();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isPanelOpen, shortcutsOpen, handleCreateSession]);
+
   if (!isPanelOpen) return null;
 
   const statusColor = (status: string) => {
@@ -381,16 +418,16 @@ export function ProjectSessionsPanel() {
               const isActive = session.id === selectedSessionId;
               return (
                 <div
-                  key={session.id}
-                  className={`group relative flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition ${
+                  className={`group cursor-pointer relative flex items-center gap-2 rounded-lg px-2.5 text-sm transition ${
                     isActive
                       ? "bg-emerald-400/15 text-emerald-200"
                       : "text-slate-300 hover:bg-white/5 hover:text-slate-100"
                   }`}
                 >
                   <button
+                    key={session.id}
                     type="button"
-                    className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left"
+                    className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left py-3"
                     onClick={() => {
                       setSelectedSessionId(session.id);
                       setMobileOpen(false);
