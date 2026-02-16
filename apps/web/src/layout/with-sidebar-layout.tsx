@@ -51,9 +51,7 @@ function LayoutInner({
             <ProjectSessionsPanel />
             <main
               className={`relative flex flex-1 flex-col ${
-                showInlineTerminal
-                  ? "gap-0 p-0 md:gap-8 md:p-8"
-                  : "gap-8 p-8"
+                showInlineTerminal ? "gap-0 p-0 md:gap-8 md:p-8" : "gap-8 p-8"
               }`}
             >
               {showSquaresBackground && !showInlineTerminal && (
@@ -69,11 +67,7 @@ function LayoutInner({
                   </div>
                 </div>
               )}
-              {showInlineTerminal ? (
-                <ProjectTerminalView />
-              ) : (
-                children
-              )}
+              {showInlineTerminal ? <ProjectTerminalView /> : children}
             </main>
           </div>
         </div>

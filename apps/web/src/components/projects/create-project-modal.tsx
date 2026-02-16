@@ -89,7 +89,7 @@ export function CreateProjectModal({
         defaultCliId: defaultCliId || null,
       });
     },
-    [folder, name, createMutation],
+    [folder, name, createMutation, defaultCliId],
   );
 
   useEffect(() => {
@@ -100,7 +100,7 @@ export function CreateProjectModal({
       setNameManuallyEdited(false);
       createMutation.reset();
     }
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, createMutation.reset]);
 
   useEffect(() => {
     if (!open) return;

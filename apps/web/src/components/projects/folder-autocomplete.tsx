@@ -26,13 +26,12 @@ export function FolderAutocomplete({
   const [query, setQuery] = useState(value);
   const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [highlightIndex, setHighlightIndex] = useState(0);
 
   const filtered = options.filter(
-    (o) =>
-      o.value && o.label.toLowerCase().includes(query.toLowerCase()),
+    (o) => o.value && o.label.toLowerCase().includes(query.toLowerCase()),
   );
 
   useEffect(() => {
@@ -41,7 +40,7 @@ export function FolderAutocomplete({
 
   useEffect(() => {
     setHighlightIndex(0);
-  }, [query]);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -108,19 +107,19 @@ export function FolderAutocomplete({
         aria-controls={id ? `${id}-listbox` : undefined}
       />
       {open && (
-        <ul
+        <div
           ref={listRef}
           id={id ? `${id}-listbox` : undefined}
           role="listbox"
           className="absolute left-0 right-0 top-full z-20 mt-1 max-h-48 overflow-auto rounded-xl border border-white/10 bg-(--oc-panel-strong) py-1 shadow-xl"
         >
           {filtered.length === 0 ? (
-            <li className="px-3 py-2 text-xs text-slate-500">
+            <div className="px-3 py-2 text-xs text-slate-500">
               No folders found.
-            </li>
+            </div>
           ) : (
             filtered.map((opt, i) => (
-              <li key={opt.value}>
+              <div key={opt.value}>
                 <button
                   type="button"
                   className={`flex w-full items-center px-3 py-2 text-left text-sm transition ${
@@ -135,10 +134,10 @@ export function FolderAutocomplete({
                 >
                   {opt.label}
                 </button>
-              </li>
+              </div>
             ))
           )}
-        </ul>
+        </div>
       )}
     </div>
   );

@@ -10,11 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  useShortcuts,
-  modKey,
-} from "@/components/shortcuts/shortcuts-context";
-import type { ShortcutItem } from "@/components/shortcuts/shortcuts-types";
+import { modKey, useShortcuts } from "@/components/shortcuts/shortcuts-context";
 import {
   Tooltip,
   TooltipContent,
@@ -54,7 +50,7 @@ export function ProjectSessionsPanel() {
   );
 
   const sessionsQuery = api.project.listSessions.useQuery(
-    { projectId: selectedProjectId! },
+    { projectId: selectedProjectId ?? "" },
     {
       enabled: Boolean(selectedProjectId),
       refetchInterval: 5000,
@@ -65,7 +61,7 @@ export function ProjectSessionsPanel() {
   const createSessionMutation = api.project.createSession.useMutation({
     onSuccess: (session) => {
       void utils.project.listSessions.invalidate({
-        projectId: selectedProjectId!,
+        projectId: selectedProjectId ?? "",
       });
       markSessionCreated(session.id);
       setSelectedSessionId(session.id);
@@ -75,7 +71,7 @@ export function ProjectSessionsPanel() {
   const removeSessionMutation = api.terminal.removeSession.useMutation({
     onSuccess: (_result, variables) => {
       void utils.project.listSessions.invalidate({
-        projectId: selectedProjectId!,
+        projectId: selectedProjectId ?? "",
       });
       if (selectedSessionId === variables.id) {
         setSelectedSessionId(null);
@@ -86,7 +82,7 @@ export function ProjectSessionsPanel() {
   const updateNameMutation = api.terminal.updateSessionName.useMutation({
     onSuccess: () => {
       void utils.project.listSessions.invalidate({
-        projectId: selectedProjectId!,
+        projectId: selectedProjectId ?? "",
       });
     },
   });
@@ -115,7 +111,7 @@ export function ProjectSessionsPanel() {
   useEffect(() => {
     if (isPanelOpen) setMobileOpen(true);
     else setMobileOpen(false);
-  }, [isPanelOpen, selectedProjectId]);
+  }, [isPanelOpen]);
 
   // Close session menu on outside click
   useEffect(() => {
@@ -265,16 +261,9 @@ export function ProjectSessionsPanel() {
                   disabled={createSessionMutation.isPending}
                 >
                   {createSessionMutation.isPending ? (
-                    <Loader2
-                      className="h-3.5 w-3.5 animate-spin"
-                      aria-hidden
-                    />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
                   ) : (
-                    <Plus
-                      className="h-3.5 w-3.5"
-                      strokeWidth={2}
-                      aria-hidden
-                    />
+                    <Plus className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
                   )}
                 </button>
               </TooltipTrigger>
@@ -287,8 +276,9 @@ export function ProjectSessionsPanel() {
                   className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
                   aria-label="Project options"
                   onClick={(e) => {
+                    if (!selectedProjectId) return;
                     setProjectMenu({
-                      id: selectedProjectId!,
+                      id: selectedProjectId,
                       x: e.clientX,
                       y: e.clientY,
                     });
@@ -418,6 +408,7 @@ export function ProjectSessionsPanel() {
               const isActive = session.id === selectedSessionId;
               return (
                 <div
+                  key={session.id}
                   className={`group cursor-pointer relative flex items-center gap-2 rounded-lg px-2.5 text-sm transition ${
                     isActive
                       ? "bg-emerald-400/15 text-emerald-200"
@@ -425,7 +416,6 @@ export function ProjectSessionsPanel() {
                   }`}
                 >
                   <button
-                    key={session.id}
                     type="button"
                     className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left py-3"
                     onClick={() => {
@@ -464,7 +454,6 @@ export function ProjectSessionsPanel() {
           </div>
         )}
       </div>
-
     </>
   );
 

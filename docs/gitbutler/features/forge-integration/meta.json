@@ -1,8 +1,5 @@
 {
   "title": "Forge Integrations",
   "defaultOpen": false,
-  "pages": [
-    "github-integration",
-    "gitlab-integration"
-  ]
+  "pages": ["github-integration", "gitlab-integration"]
 }

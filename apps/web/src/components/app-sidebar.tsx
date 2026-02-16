@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Keyboard,
-  Menu,
-  Plus,
-  Settings,
-  X,
-} from "lucide-react";
+import { Keyboard, Menu, Plus, Settings, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -92,11 +86,8 @@ export function AppSidebar() {
   const pathname = usePathname() ?? "/";
   const { isMobileOpen, setMobileOpen } = useAppSidebarContext();
   const { openShortcuts } = useShortcuts();
-  const {
-    selectedProjectId,
-    setSelectedProjectId,
-    setCreateModalOpen,
-  } = useProject();
+  const { selectedProjectId, setSelectedProjectId, setCreateModalOpen } =
+    useProject();
   const activePage = pathname.startsWith("/settings") ? "settings" : null;
 
   const projectsQuery = api.project.list.useQuery();

@@ -104,10 +104,7 @@ export function ShortcutsProvider({ children }: ShortcutsProviderProps) {
   );
 
   const allShortcuts = useMemo(
-    () => [
-      ...GLOBAL_SHORTCUTS,
-      ...Object.values(shortcutSources).flat(),
-    ],
+    () => [...GLOBAL_SHORTCUTS, ...Object.values(shortcutSources).flat()],
     [shortcutSources],
   );
 
@@ -132,7 +129,14 @@ export function ShortcutsProvider({ children }: ShortcutsProviderProps) {
       unregisterShortcuts,
       shortcutsOpen: open,
     }),
-    [openShortcuts, closeShortcuts, setPageShortcuts, registerShortcuts, unregisterShortcuts, open],
+    [
+      openShortcuts,
+      closeShortcuts,
+      setPageShortcuts,
+      registerShortcuts,
+      unregisterShortcuts,
+      open,
+    ],
   );
 
   return (

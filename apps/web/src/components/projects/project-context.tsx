@@ -56,19 +56,16 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     setHydrated(true);
   }, []);
 
-  const setSelectedProjectId = useCallback(
-    (id: string | null) => {
-      setSelectedProjectIdRaw(id);
-      if (id) {
-        window.localStorage.setItem(STORAGE_PROJECT_KEY, id);
-      } else {
-        window.localStorage.removeItem(STORAGE_PROJECT_KEY);
-      }
-      setSelectedSessionIdRaw(null);
-      window.localStorage.removeItem(STORAGE_SESSION_KEY);
-    },
-    [],
-  );
+  const setSelectedProjectId = useCallback((id: string | null) => {
+    setSelectedProjectIdRaw(id);
+    if (id) {
+      window.localStorage.setItem(STORAGE_PROJECT_KEY, id);
+    } else {
+      window.localStorage.removeItem(STORAGE_PROJECT_KEY);
+    }
+    setSelectedSessionIdRaw(null);
+    window.localStorage.removeItem(STORAGE_SESSION_KEY);
+  }, []);
 
   const setSelectedSessionId = useCallback((id: string | null) => {
     setSelectedSessionIdRaw(id);

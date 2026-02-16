@@ -218,18 +218,36 @@ export function TerminalPane({
         if (Math.abs(scrollAccumulator) < SCROLL_THRESHOLD) return;
 
         const direction = scrollAccumulator > 0 ? 1 : -1;
-        const lines = Math.floor(Math.abs(scrollAccumulator) / SCROLL_THRESHOLD);
+        const lines = Math.floor(
+          Math.abs(scrollAccumulator) / SCROLL_THRESHOLD,
+        );
         scrollAccumulator = scrollAccumulator % SCROLL_THRESHOLD;
 
         if (activeTerminal.buffer.active.type === "alternate") {
           const sendRaw = sendRawInputRef.current;
           if (!sendRaw) return;
 
-          const rect = (event.currentTarget as HTMLElement)?.getBoundingClientRect();
-          const cellWidth = activeTerminal.cols > 0 ? rect.width / activeTerminal.cols : 9;
-          const cellHeight = activeTerminal.rows > 0 ? rect.height / activeTerminal.rows : 17;
-          const x = Math.min(Math.max(1, Math.floor((event.clientX - rect.left) / cellWidth) + 1), 223);
-          const y = Math.min(Math.max(1, Math.floor((event.clientY - rect.top) / cellHeight) + 1), 223);
+          const rect = (
+            event.currentTarget as HTMLElement
+          )?.getBoundingClientRect();
+          const cellWidth =
+            activeTerminal.cols > 0 ? rect.width / activeTerminal.cols : 9;
+          const cellHeight =
+            activeTerminal.rows > 0 ? rect.height / activeTerminal.rows : 17;
+          const x = Math.min(
+            Math.max(
+              1,
+              Math.floor((event.clientX - rect.left) / cellWidth) + 1,
+            ),
+            223,
+          );
+          const y = Math.min(
+            Math.max(
+              1,
+              Math.floor((event.clientY - rect.top) / cellHeight) + 1,
+            ),
+            223,
+          );
 
           // X10 mouse format: ESC [ M Cb Cx Cy (button 64=up, 65=down)
           const button = direction < 0 ? 64 : 65;
@@ -245,7 +263,10 @@ export function TerminalPane({
       };
 
       const wheelTarget = terminal.element ?? terminalHost;
-      wheelTarget.addEventListener("wheel", handleWheel, { passive: false, capture: true });
+      wheelTarget.addEventListener("wheel", handleWheel, {
+        passive: false,
+        capture: true,
+      });
       /**
        * Custom text selection handling that bypasses tmux mouse capture.
        * Intercepts mouse events and uses xterm's selection API directly.
@@ -259,8 +280,20 @@ export function TerminalPane({
         const cellWidth = terminal.cols > 0 ? rect.width / terminal.cols : 9;
         const cellHeight = terminal.rows > 0 ? rect.height / terminal.rows : 17;
         return {
-          col: Math.max(0, Math.min(Math.floor((clientX - rect.left) / cellWidth), terminal.cols - 1)),
-          row: Math.max(0, Math.min(Math.floor((clientY - rect.top) / cellHeight), terminal.rows - 1)),
+          col: Math.max(
+            0,
+            Math.min(
+              Math.floor((clientX - rect.left) / cellWidth),
+              terminal.cols - 1,
+            ),
+          ),
+          row: Math.max(
+            0,
+            Math.min(
+              Math.floor((clientY - rect.top) / cellHeight),
+              terminal.rows - 1,
+            ),
+          ),
         };
       };
 
@@ -289,14 +322,23 @@ export function TerminalPane({
         let endCol = col;
 
         if (startRow > endRow || (startRow === endRow && startCol > endCol)) {
-          [startRow, startCol, endRow, endCol] = [endRow, endCol, startRow, startCol];
+          [startRow, startCol, endRow, endCol] = [
+            endRow,
+            endCol,
+            startRow,
+            startCol,
+          ];
         }
 
         if (startRow === endRow) {
           terminal.select(startCol, startRow, endCol - startCol + 1);
         } else {
           const totalCols = terminal.cols;
-          const length = (totalCols - startCol) + ((endRow - startRow - 1) * totalCols) + (endCol + 1);
+          const length =
+            totalCols -
+            startCol +
+            (endRow - startRow - 1) * totalCols +
+            (endCol + 1);
           terminal.select(startCol, startRow, length);
         }
 
@@ -312,15 +354,27 @@ export function TerminalPane({
         event.stopPropagation();
       };
 
-      wheelTarget.addEventListener("mousedown", handleMouseDown, { capture: true });
-      document.addEventListener("mousemove", handleMouseMove, { capture: true });
+      wheelTarget.addEventListener("mousedown", handleMouseDown, {
+        capture: true,
+      });
+      document.addEventListener("mousemove", handleMouseMove, {
+        capture: true,
+      });
       document.addEventListener("mouseup", handleMouseUp, { capture: true });
 
       removeWheelListener = () => {
-        wheelTarget.removeEventListener("wheel", handleWheel, { capture: true });
-        wheelTarget.removeEventListener("mousedown", handleMouseDown, { capture: true });
-        document.removeEventListener("mousemove", handleMouseMove, { capture: true });
-        document.removeEventListener("mouseup", handleMouseUp, { capture: true });
+        wheelTarget.removeEventListener("wheel", handleWheel, {
+          capture: true,
+        });
+        wheelTarget.removeEventListener("mousedown", handleMouseDown, {
+          capture: true,
+        });
+        document.removeEventListener("mousemove", handleMouseMove, {
+          capture: true,
+        });
+        document.removeEventListener("mouseup", handleMouseUp, {
+          capture: true,
+        });
       };
       webFontsAddon.loadFonts(["MesloLGS NF"]).catch(() => {});
       if (terminal.unicode.versions.includes("11")) {
@@ -409,7 +463,7 @@ export function TerminalPane({
   const startSessionOnce = useCallback(
     async (connectionId: number, options?: { reset?: boolean }) => {
       const data = await startSessionMutation.mutateAsync({
-        sessionId: sessionId!,
+        sessionId: sessionId ?? "",
         reset: options?.reset,
         workspaceSuffix,
       });
@@ -494,8 +548,7 @@ export function TerminalPane({
 
       const sendInput = (payload: string | Uint8Array) => {
         const activeSocket = socketRef.current;
-        if (!activeSocket || activeSocket.readyState !== WebSocket.OPEN)
-          return;
+        if (!activeSocket || activeSocket.readyState !== WebSocket.OPEN) return;
 
         if (typeof payload === "string") {
           const filtered = filterMouseInput(payload);
@@ -522,8 +575,7 @@ export function TerminalPane({
       // Raw input without mouse filtering (for wheel scroll sequences)
       const sendRawInput = (payload: string) => {
         const activeSocket = socketRef.current;
-        if (!activeSocket || activeSocket.readyState !== WebSocket.OPEN)
-          return;
+        if (!activeSocket || activeSocket.readyState !== WebSocket.OPEN) return;
         const buffer = new Uint8Array(3 * payload.length + 1);
         buffer[0] = "0".charCodeAt(0);
         const result = encoder.encodeInto(payload, buffer.subarray(1));
@@ -535,8 +587,7 @@ export function TerminalPane({
 
       const sendResize = (cols: number, rows: number) => {
         const activeSocket = socketRef.current;
-        if (!activeSocket || activeSocket.readyState !== WebSocket.OPEN)
-          return;
+        if (!activeSocket || activeSocket.readyState !== WebSocket.OPEN) return;
         const message = `1${JSON.stringify({ columns: cols, rows })}`;
         activeSocket.send(encoder.encode(message));
       };
@@ -611,9 +662,7 @@ export function TerminalPane({
           case "0":
             {
               const text =
-                typeof payload === "string"
-                  ? payload
-                  : decoder.decode(payload);
+                typeof payload === "string" ? payload : decoder.decode(payload);
               const lowerText = text.toLowerCase();
               if (
                 lowerText.includes("screen is terminating") ||
@@ -623,10 +672,7 @@ export function TerminalPane({
               ) {
                 log("ws: terminal session termination detected");
                 sessionEndedRef.current = true;
-                onSessionEnded(
-                  true,
-                  "Session ended. Start again to continue.",
-                );
+                onSessionEnded(true, "Session ended. Start again to continue.");
                 socket.close();
                 return;
               }
@@ -723,9 +769,7 @@ export function TerminalPane({
 
       const connectionId = ++connectionIdRef.current;
       log(
-        `startSession: id=${connectionId} reset=${
-          options?.reset ? "1" : "0"
-        }`,
+        `startSession: id=${connectionId} reset=${options?.reset ? "1" : "0"}`,
       );
 
       if (!terminalRef.current && terminalReadyRef.current) {
@@ -757,9 +801,7 @@ export function TerminalPane({
       for (let attempt = 0; attempt < maxOuterAttempts; attempt += 1) {
         if (connectionIdRef.current !== connectionId || !mountedRef.current)
           return;
-        log(
-          `startSession: outer attempt ${attempt + 1}/${maxOuterAttempts}`,
-        );
+        log(`startSession: outer attempt ${attempt + 1}/${maxOuterAttempts}`);
 
         try {
           await startSessionOnce(connectionId, options);
@@ -767,9 +809,7 @@ export function TerminalPane({
         } catch (error) {
           lastError =
             error instanceof Error ? error.message : "Unexpected error.";
-          log(
-            `startSession: attempt ${attempt + 1} failed: ${lastError}`,
-          );
+          log(`startSession: attempt ${attempt + 1} failed: ${lastError}`);
 
           if (attempt < maxOuterAttempts - 1) {
             if (!mountedRef.current) return;
@@ -777,9 +817,7 @@ export function TerminalPane({
             setStatus("starting");
             setError(null);
             const delay = 2000 * (attempt + 1);
-            await new Promise((resolve) =>
-              window.setTimeout(resolve, delay),
-            );
+            await new Promise((resolve) => window.setTimeout(resolve, delay));
             if (!mountedRef.current) return;
           }
         }
@@ -790,14 +828,7 @@ export function TerminalPane({
       setStatus("error");
       setError(lastError ?? "Failed to connect after multiple attempts.");
     },
-    [
-      log,
-      onSessionEnded,
-      sessionId,
-      setError,
-      setStatus,
-      startSessionOnce,
-    ],
+    [log, onSessionEnded, sessionId, setError, setStatus, startSessionOnce],
   );
 
   useEffect(() => {

@@ -1,11 +1,11 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import type { AgentProvider } from "@/generated/prisma";
 import { AGENT_IDS } from "@/lib/agent-preferences";
 import { portProxyService } from "@/lib/docker/port-proxy.service";
 import { sessionService } from "@/lib/docker/session.service";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import type { db as dbClient } from "@/server/db";
-import type { AgentProvider } from "@/generated/prisma";
 
 const projectIdSchema = z.string().min(1);
 const projectNameSchema = z.string().trim().min(1).max(80);

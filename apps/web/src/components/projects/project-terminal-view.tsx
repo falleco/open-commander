@@ -33,9 +33,7 @@ export function ProjectTerminalView() {
   const projectsQuery = api.project.list.useQuery();
   const selectedProject = projectsQuery.data?.find(
     (p: { id: string }) => p.id === selectedProjectId,
-  ) as
-    | { id: string; folder: string; defaultCliId: string | null }
-    | undefined;
+  ) as { id: string; folder: string; defaultCliId: string | null } | undefined;
   const [sessionStates, setSessionStates] = useState<
     Record<string, typeof EMPTY_STATE>
   >({});
@@ -78,8 +76,7 @@ export function ProjectTerminalView() {
           patchState(sessionId, { errorMessage: message }),
         onContainerName: (name: string | null) =>
           patchState(sessionId, { containerName: name }),
-        onWsUrl: (url: string | null) =>
-          patchState(sessionId, { wsUrl: url }),
+        onWsUrl: (url: string | null) => patchState(sessionId, { wsUrl: url }),
         onSessionEnded: (ended: boolean, message: string | null) =>
           patchState(sessionId, {
             sessionEnded: ended,
@@ -96,7 +93,12 @@ export function ProjectTerminalView() {
       handlersRef.current.set(sessionId, handlers);
       return handlers;
     },
-    [clearNewSession, patchState, selectedProjectId, utils.project.listSessions],
+    [
+      clearNewSession,
+      patchState,
+      selectedProjectId,
+      utils.project.listSessions,
+    ],
   );
 
   const log = useCallback((message: string) => {

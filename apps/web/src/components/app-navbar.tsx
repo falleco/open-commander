@@ -93,7 +93,11 @@ export function AppNavbar({ user }: Props) {
                 aria-label="Tasks"
                 aria-current={isTasksActive ? "page" : undefined}
               >
-                <CheckSquare className="h-4 w-4" strokeWidth={1.6} aria-hidden />
+                <CheckSquare
+                  className="h-4 w-4"
+                  strokeWidth={1.6}
+                  aria-hidden
+                />
               </Link>
             </TooltipTrigger>
             <TooltipContent side="bottom">Tasks</TooltipContent>

@@ -18,7 +18,7 @@ const logBooleanSetting = (
   console.log(`${indent}${statusIcon} ${description}`);
 };
 
-const logSetting = (
+const _logSetting = (
   value: string,
   description: string,
   indent = "|   ",
