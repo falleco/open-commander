@@ -8190,6 +8190,7 @@ export namespace Prisma {
     id: string | null
     name: string | null
     folder: string | null
+    defaultCliId: $Enums.AgentProvider | null
     userId: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -8199,6 +8200,7 @@ export namespace Prisma {
     id: string | null
     name: string | null
     folder: string | null
+    defaultCliId: $Enums.AgentProvider | null
     userId: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -8208,6 +8210,7 @@ export namespace Prisma {
     id: number
     name: number
     folder: number
+    defaultCliId: number
     userId: number
     createdAt: number
     updatedAt: number
@@ -8219,6 +8222,7 @@ export namespace Prisma {
     id?: true
     name?: true
     folder?: true
+    defaultCliId?: true
     userId?: true
     createdAt?: true
     updatedAt?: true
@@ -8228,6 +8232,7 @@ export namespace Prisma {
     id?: true
     name?: true
     folder?: true
+    defaultCliId?: true
     userId?: true
     createdAt?: true
     updatedAt?: true
@@ -8237,6 +8242,7 @@ export namespace Prisma {
     id?: true
     name?: true
     folder?: true
+    defaultCliId?: true
     userId?: true
     createdAt?: true
     updatedAt?: true
@@ -8319,6 +8325,7 @@ export namespace Prisma {
     id: string
     name: string
     folder: string
+    defaultCliId: $Enums.AgentProvider | null
     userId: string
     createdAt: Date
     updatedAt: Date
@@ -8345,6 +8352,7 @@ export namespace Prisma {
     id?: boolean
     name?: boolean
     folder?: boolean
+    defaultCliId?: boolean
     userId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -8357,6 +8365,7 @@ export namespace Prisma {
     id?: boolean
     name?: boolean
     folder?: boolean
+    defaultCliId?: boolean
     userId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -8367,6 +8376,7 @@ export namespace Prisma {
     id?: boolean
     name?: boolean
     folder?: boolean
+    defaultCliId?: boolean
     userId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -8377,12 +8387,13 @@ export namespace Prisma {
     id?: boolean
     name?: boolean
     folder?: boolean
+    defaultCliId?: boolean
     userId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type ProjectOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "folder" | "userId" | "createdAt" | "updatedAt", ExtArgs["result"]["project"]>
+  export type ProjectOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "folder" | "defaultCliId" | "userId" | "createdAt" | "updatedAt", ExtArgs["result"]["project"]>
   export type ProjectInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
     sessions?: boolean | Project$sessionsArgs<ExtArgs>
@@ -8405,6 +8416,7 @@ export namespace Prisma {
       id: string
       name: string
       folder: string
+      defaultCliId: $Enums.AgentProvider | null
       userId: string
       createdAt: Date
       updatedAt: Date
@@ -8836,6 +8848,7 @@ export namespace Prisma {
     readonly id: FieldRef<"Project", 'String'>
     readonly name: FieldRef<"Project", 'String'>
     readonly folder: FieldRef<"Project", 'String'>
+    readonly defaultCliId: FieldRef<"Project", 'AgentProvider'>
     readonly userId: FieldRef<"Project", 'String'>
     readonly createdAt: FieldRef<"Project", 'DateTime'>
     readonly updatedAt: FieldRef<"Project", 'DateTime'>
@@ -16275,6 +16288,7 @@ export namespace Prisma {
     id: 'id',
     name: 'name',
     folder: 'folder',
+    defaultCliId: 'defaultCliId',
     userId: 'userId',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
@@ -16489,6 +16503,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'AgentProvider'
+   */
+  export type EnumAgentProviderFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AgentProvider'>
+    
+
+
+  /**
+   * Reference to a field of type 'AgentProvider[]'
+   */
+  export type ListEnumAgentProviderFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AgentProvider[]'>
+    
+
+
+  /**
    * Reference to a field of type 'Json'
    */
   export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
@@ -16527,20 +16555,6 @@ export namespace Prisma {
    * Reference to a field of type 'TaskSource[]'
    */
   export type ListEnumTaskSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskSource[]'>
-    
-
-
-  /**
-   * Reference to a field of type 'AgentProvider'
-   */
-  export type EnumAgentProviderFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AgentProvider'>
-    
-
-
-  /**
-   * Reference to a field of type 'AgentProvider[]'
-   */
-  export type ListEnumAgentProviderFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AgentProvider[]'>
     
 
 
@@ -17037,6 +17051,7 @@ export namespace Prisma {
     id?: StringFilter<"Project"> | string
     name?: StringFilter<"Project"> | string
     folder?: StringFilter<"Project"> | string
+    defaultCliId?: EnumAgentProviderNullableFilter<"Project"> | $Enums.AgentProvider | null
     userId?: StringFilter<"Project"> | string
     createdAt?: DateTimeFilter<"Project"> | Date | string
     updatedAt?: DateTimeFilter<"Project"> | Date | string
@@ -17048,6 +17063,7 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     folder?: SortOrder
+    defaultCliId?: SortOrderInput | SortOrder
     userId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -17062,6 +17078,7 @@ export namespace Prisma {
     NOT?: ProjectWhereInput | ProjectWhereInput[]
     name?: StringFilter<"Project"> | string
     folder?: StringFilter<"Project"> | string
+    defaultCliId?: EnumAgentProviderNullableFilter<"Project"> | $Enums.AgentProvider | null
     userId?: StringFilter<"Project"> | string
     createdAt?: DateTimeFilter<"Project"> | Date | string
     updatedAt?: DateTimeFilter<"Project"> | Date | string
@@ -17073,6 +17090,7 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     folder?: SortOrder
+    defaultCliId?: SortOrderInput | SortOrder
     userId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -17088,6 +17106,7 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"Project"> | string
     name?: StringWithAggregatesFilter<"Project"> | string
     folder?: StringWithAggregatesFilter<"Project"> | string
+    defaultCliId?: EnumAgentProviderNullableWithAggregatesFilter<"Project"> | $Enums.AgentProvider | null
     userId?: StringWithAggregatesFilter<"Project"> | string
     createdAt?: DateTimeWithAggregatesFilter<"Project"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Project"> | Date | string
@@ -18118,6 +18137,7 @@ export namespace Prisma {
     id?: string
     name: string
     folder: string
+    defaultCliId?: $Enums.AgentProvider | null
     createdAt?: Date | string
     updatedAt?: Date | string
     user: UserCreateNestedOneWithoutProjectsInput
@@ -18128,6 +18148,7 @@ export namespace Prisma {
     id?: string
     name: string
     folder: string
+    defaultCliId?: $Enums.AgentProvider | null
     userId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -18138,6 +18159,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     folder?: StringFieldUpdateOperationsInput | string
+    defaultCliId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     user?: UserUpdateOneRequiredWithoutProjectsNestedInput
@@ -18148,6 +18170,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     folder?: StringFieldUpdateOperationsInput | string
+    defaultCliId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
     userId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -18158,6 +18181,7 @@ export namespace Prisma {
     id?: string
     name: string
     folder: string
+    defaultCliId?: $Enums.AgentProvider | null
     userId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -18167,6 +18191,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     folder?: StringFieldUpdateOperationsInput | string
+    defaultCliId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -18175,6 +18200,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     folder?: StringFieldUpdateOperationsInput | string
+    defaultCliId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
     userId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -19209,10 +19235,18 @@ export namespace Prisma {
     _max?: NestedIntNullableFilter<$PrismaModel>
   }
 
+  export type EnumAgentProviderNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.AgentProvider | EnumAgentProviderFieldRefInput<$PrismaModel> | null
+    in?: $Enums.AgentProvider[] | ListEnumAgentProviderFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.AgentProvider[] | ListEnumAgentProviderFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumAgentProviderNullableFilter<$PrismaModel> | $Enums.AgentProvider | null
+  }
+
   export type ProjectCountOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
     folder?: SortOrder
+    defaultCliId?: SortOrder
     userId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -19222,6 +19256,7 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     folder?: SortOrder
+    defaultCliId?: SortOrder
     userId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -19231,9 +19266,20 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     folder?: SortOrder
+    defaultCliId?: SortOrder
     userId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+  }
+
+  export type EnumAgentProviderNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.AgentProvider | EnumAgentProviderFieldRefInput<$PrismaModel> | null
+    in?: $Enums.AgentProvider[] | ListEnumAgentProviderFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.AgentProvider[] | ListEnumAgentProviderFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumAgentProviderNullableWithAggregatesFilter<$PrismaModel> | $Enums.AgentProvider | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumAgentProviderNullableFilter<$PrismaModel>
+    _max?: NestedEnumAgentProviderNullableFilter<$PrismaModel>
   }
   export type JsonNullableFilter<$PrismaModel = never> =
     | PatchUndefined<
@@ -19321,13 +19367,6 @@ export namespace Prisma {
     not?: NestedEnumTaskSourceFilter<$PrismaModel> | $Enums.TaskSource
   }
 
-  export type EnumAgentProviderNullableFilter<$PrismaModel = never> = {
-    equals?: $Enums.AgentProvider | EnumAgentProviderFieldRefInput<$PrismaModel> | null
-    in?: $Enums.AgentProvider[] | ListEnumAgentProviderFieldRefInput<$PrismaModel> | null
-    notIn?: $Enums.AgentProvider[] | ListEnumAgentProviderFieldRefInput<$PrismaModel> | null
-    not?: NestedEnumAgentProviderNullableFilter<$PrismaModel> | $Enums.AgentProvider | null
-  }
-
   export type TaskExecutionListRelationFilter = {
     every?: TaskExecutionWhereInput
     some?: TaskExecutionWhereInput
@@ -19399,16 +19438,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumTaskSourceFilter<$PrismaModel>
     _max?: NestedEnumTaskSourceFilter<$PrismaModel>
-  }
-
-  export type EnumAgentProviderNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.AgentProvider | EnumAgentProviderFieldRefInput<$PrismaModel> | null
-    in?: $Enums.AgentProvider[] | ListEnumAgentProviderFieldRefInput<$PrismaModel> | null
-    notIn?: $Enums.AgentProvider[] | ListEnumAgentProviderFieldRefInput<$PrismaModel> | null
-    not?: NestedEnumAgentProviderNullableWithAggregatesFilter<$PrismaModel> | $Enums.AgentProvider | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedEnumAgentProviderNullableFilter<$PrismaModel>
-    _max?: NestedEnumAgentProviderNullableFilter<$PrismaModel>
   }
 
   export type EnumTaskExecutionStatusFilter<$PrismaModel = never> = {
@@ -20079,6 +20108,10 @@ export namespace Prisma {
     connect?: TerminalSessionWhereUniqueInput | TerminalSessionWhereUniqueInput[]
   }
 
+  export type NullableEnumAgentProviderFieldUpdateOperationsInput = {
+    set?: $Enums.AgentProvider | null
+  }
+
   export type UserUpdateOneRequiredWithoutProjectsNestedInput = {
     create?: XOR<UserCreateWithoutProjectsInput, UserUncheckedCreateWithoutProjectsInput>
     connectOrCreate?: UserCreateOrConnectWithoutProjectsInput
@@ -20155,10 +20188,6 @@ export namespace Prisma {
 
   export type EnumTaskSourceFieldUpdateOperationsInput = {
     set?: $Enums.TaskSource
-  }
-
-  export type NullableEnumAgentProviderFieldUpdateOperationsInput = {
-    set?: $Enums.AgentProvider | null
   }
 
   export type UserUpdateOneRequiredWithoutTasksNestedInput = {
@@ -20543,6 +20572,23 @@ export namespace Prisma {
     gte?: number | FloatFieldRefInput<$PrismaModel>
     not?: NestedFloatNullableFilter<$PrismaModel> | number | null
   }
+
+  export type NestedEnumAgentProviderNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.AgentProvider | EnumAgentProviderFieldRefInput<$PrismaModel> | null
+    in?: $Enums.AgentProvider[] | ListEnumAgentProviderFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.AgentProvider[] | ListEnumAgentProviderFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumAgentProviderNullableFilter<$PrismaModel> | $Enums.AgentProvider | null
+  }
+
+  export type NestedEnumAgentProviderNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.AgentProvider | EnumAgentProviderFieldRefInput<$PrismaModel> | null
+    in?: $Enums.AgentProvider[] | ListEnumAgentProviderFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.AgentProvider[] | ListEnumAgentProviderFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumAgentProviderNullableWithAggregatesFilter<$PrismaModel> | $Enums.AgentProvider | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumAgentProviderNullableFilter<$PrismaModel>
+    _max?: NestedEnumAgentProviderNullableFilter<$PrismaModel>
+  }
   export type NestedJsonNullableFilter<$PrismaModel = never> =
     | PatchUndefined<
         Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
@@ -20581,13 +20627,6 @@ export namespace Prisma {
     not?: NestedEnumTaskSourceFilter<$PrismaModel> | $Enums.TaskSource
   }
 
-  export type NestedEnumAgentProviderNullableFilter<$PrismaModel = never> = {
-    equals?: $Enums.AgentProvider | EnumAgentProviderFieldRefInput<$PrismaModel> | null
-    in?: $Enums.AgentProvider[] | ListEnumAgentProviderFieldRefInput<$PrismaModel> | null
-    notIn?: $Enums.AgentProvider[] | ListEnumAgentProviderFieldRefInput<$PrismaModel> | null
-    not?: NestedEnumAgentProviderNullableFilter<$PrismaModel> | $Enums.AgentProvider | null
-  }
-
   export type NestedEnumTaskStatusWithAggregatesFilter<$PrismaModel = never> = {
     equals?: $Enums.TaskStatus | EnumTaskStatusFieldRefInput<$PrismaModel>
     in?: $Enums.TaskStatus[] | ListEnumTaskStatusFieldRefInput<$PrismaModel>
@@ -20606,16 +20645,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumTaskSourceFilter<$PrismaModel>
     _max?: NestedEnumTaskSourceFilter<$PrismaModel>
-  }
-
-  export type NestedEnumAgentProviderNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.AgentProvider | EnumAgentProviderFieldRefInput<$PrismaModel> | null
-    in?: $Enums.AgentProvider[] | ListEnumAgentProviderFieldRefInput<$PrismaModel> | null
-    notIn?: $Enums.AgentProvider[] | ListEnumAgentProviderFieldRefInput<$PrismaModel> | null
-    not?: NestedEnumAgentProviderNullableWithAggregatesFilter<$PrismaModel> | $Enums.AgentProvider | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedEnumAgentProviderNullableFilter<$PrismaModel>
-    _max?: NestedEnumAgentProviderNullableFilter<$PrismaModel>
   }
 
   export type NestedEnumTaskExecutionStatusFilter<$PrismaModel = never> = {
@@ -20878,6 +20907,7 @@ export namespace Prisma {
     id?: string
     name: string
     folder: string
+    defaultCliId?: $Enums.AgentProvider | null
     createdAt?: Date | string
     updatedAt?: Date | string
     sessions?: TerminalSessionCreateNestedManyWithoutProjectInput
@@ -20887,6 +20917,7 @@ export namespace Prisma {
     id?: string
     name: string
     folder: string
+    defaultCliId?: $Enums.AgentProvider | null
     createdAt?: Date | string
     updatedAt?: Date | string
     sessions?: TerminalSessionUncheckedCreateNestedManyWithoutProjectInput
@@ -21110,6 +21141,7 @@ export namespace Prisma {
     id?: StringFilter<"Project"> | string
     name?: StringFilter<"Project"> | string
     folder?: StringFilter<"Project"> | string
+    defaultCliId?: EnumAgentProviderNullableFilter<"Project"> | $Enums.AgentProvider | null
     userId?: StringFilter<"Project"> | string
     createdAt?: DateTimeFilter<"Project"> | Date | string
     updatedAt?: DateTimeFilter<"Project"> | Date | string
@@ -21436,6 +21468,7 @@ export namespace Prisma {
     id?: string
     name: string
     folder: string
+    defaultCliId?: $Enums.AgentProvider | null
     createdAt?: Date | string
     updatedAt?: Date | string
     user: UserCreateNestedOneWithoutProjectsInput
@@ -21445,6 +21478,7 @@ export namespace Prisma {
     id?: string
     name: string
     folder: string
+    defaultCliId?: $Enums.AgentProvider | null
     userId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -21537,6 +21571,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     folder?: StringFieldUpdateOperationsInput | string
+    defaultCliId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     user?: UserUpdateOneRequiredWithoutProjectsNestedInput
@@ -21546,6 +21581,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     folder?: StringFieldUpdateOperationsInput | string
+    defaultCliId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
     userId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -22584,6 +22620,7 @@ export namespace Prisma {
     id?: string
     name: string
     folder: string
+    defaultCliId?: $Enums.AgentProvider | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -22778,6 +22815,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     folder?: StringFieldUpdateOperationsInput | string
+    defaultCliId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     sessions?: TerminalSessionUpdateManyWithoutProjectNestedInput
@@ -22787,6 +22825,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     folder?: StringFieldUpdateOperationsInput | string
+    defaultCliId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     sessions?: TerminalSessionUncheckedUpdateManyWithoutProjectNestedInput
@@ -22796,6 +22835,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     folder?: StringFieldUpdateOperationsInput | string
+    defaultCliId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }

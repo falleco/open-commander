@@ -1,14 +1,21 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { AGENT_IDS, AGENT_LABELS } from "@/lib/agent-preferences";
 import { api } from "@/trpc/react";
 import { FolderAutocomplete } from "./folder-autocomplete";
 
 type CreateProjectModalProps = {
   open: boolean;
   onClose: () => void;
-  onCreated?: (project: { id: string; name: string; folder: string }) => void;
+  onCreated?: (project: {
+    id: string;
+    name: string;
+    folder: string;
+    defaultCliId: string | null;
+  }) => void;
 };
 
 /**
@@ -22,6 +29,7 @@ export function CreateProjectModal({
 }: CreateProjectModalProps) {
   const [folder, setFolder] = useState("");
   const [name, setName] = useState("");
+  const [defaultCliId, setDefaultCliId] = useState("");
   const [nameManuallyEdited, setNameManuallyEdited] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const utils = api.useUtils();
@@ -47,6 +55,7 @@ export function CreateProjectModal({
   const resetAndClose = useCallback(() => {
     setFolder("");
     setName("");
+    setDefaultCliId("");
     setNameManuallyEdited(false);
     createMutation.reset();
     onClose();
@@ -74,7 +83,11 @@ export function CreateProjectModal({
     (e?: React.FormEvent) => {
       e?.preventDefault();
       if (!folder.trim() || !name.trim()) return;
-      createMutation.mutate({ name: name.trim(), folder: folder.trim() });
+      createMutation.mutate({
+        name: name.trim(),
+        folder: folder.trim(),
+        defaultCliId: defaultCliId || null,
+      });
     },
     [folder, name, createMutation],
   );
@@ -83,6 +96,7 @@ export function CreateProjectModal({
     if (open) {
       setFolder("");
       setName("");
+      setDefaultCliId("");
       setNameManuallyEdited(false);
       createMutation.reset();
     }
@@ -161,6 +175,38 @@ export function CreateProjectModal({
             autoCapitalize="none"
             spellCheck={false}
           />
+        </div>
+
+        <div className="mt-4 grid gap-2">
+          <label
+            htmlFor="project-default-cli"
+            className="text-xs font-medium uppercase tracking-wider text-slate-400"
+          >
+            Default CLI
+          </label>
+          <div className="relative">
+            <select
+              id="project-default-cli"
+              value={defaultCliId}
+              onChange={(e) => setDefaultCliId(e.target.value)}
+              className="w-full appearance-none rounded-xl border border-white/10 bg-(--oc-panel) px-3 py-2 text-sm text-white outline-none transition focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20"
+            >
+              <option value="">None</option>
+              {AGENT_IDS.map((id) => (
+                <option key={id} value={id}>
+                  {AGENT_LABELS[id]}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              strokeWidth={2}
+              aria-hidden
+            />
+          </div>
+          <p className="text-xs text-slate-500">
+            Optionally auto-start a CLI when new sessions connect.
+          </p>
         </div>
 
         {createMutation.error && (

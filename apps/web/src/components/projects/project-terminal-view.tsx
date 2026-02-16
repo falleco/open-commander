@@ -33,7 +33,9 @@ export function ProjectTerminalView() {
   const projectsQuery = api.project.list.useQuery();
   const selectedProject = projectsQuery.data?.find(
     (p: { id: string }) => p.id === selectedProjectId,
-  ) as { id: string; folder: string } | undefined;
+  ) as
+    | { id: string; folder: string; defaultCliId: string | null }
+    | undefined;
   const [sessionStates, setSessionStates] = useState<
     Record<string, typeof EMPTY_STATE>
   >({});
@@ -112,6 +114,10 @@ export function ProjectTerminalView() {
   const isConnecting =
     state.status === "starting" || state.status === "connecting";
   const isNew = isNewSession(selectedSessionId);
+  const autoCommand =
+    isNew && selectedProject?.defaultCliId
+      ? selectedProject.defaultCliId
+      : null;
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-none border-white/10 md:rounded-xl md:border">
@@ -124,6 +130,7 @@ export function ProjectTerminalView() {
         workspaceSuffix={selectedProject?.folder ?? ""}
         wsUrl={state.wsUrl}
         errorMessage={state.errorMessage}
+        autoCommand={autoCommand}
         onStatusChange={handlers.onStatusChange}
         onErrorMessage={handlers.onErrorMessage}
         onContainerName={handlers.onContainerName}

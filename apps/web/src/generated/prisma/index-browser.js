@@ -196,6 +196,7 @@ exports.Prisma.ProjectScalarFieldEnum = {
   id: 'id',
   name: 'name',
   folder: 'folder',
+  defaultCliId: 'defaultCliId',
   userId: 'userId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -311,6 +312,13 @@ exports.TerminalSessionStatus = exports.$Enums.TerminalSessionStatus = {
   stopped: 'stopped'
 };
 
+exports.AgentProvider = exports.$Enums.AgentProvider = {
+  opencode: 'opencode',
+  claude: 'claude',
+  codex: 'codex',
+  cursor: 'cursor'
+};
+
 exports.TaskStatus = exports.$Enums.TaskStatus = {
   todo: 'todo',
   doing: 'doing',
@@ -321,13 +329,6 @@ exports.TaskStatus = exports.$Enums.TaskStatus = {
 exports.TaskSource = exports.$Enums.TaskSource = {
   web: 'web',
   api: 'api'
-};
-
-exports.AgentProvider = exports.$Enums.AgentProvider = {
-  opencode: 'opencode',
-  claude: 'claude',
-  codex: 'codex',
-  cursor: 'cursor'
 };
 
 exports.TaskExecutionStatus = exports.$Enums.TaskExecutionStatus = {
