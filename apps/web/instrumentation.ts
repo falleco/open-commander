@@ -21,12 +21,12 @@ const BANNER = `
  * which is highly recommended.
  */
 export async function register() {
-  if (process.env.NEXT_RUNTIME === "nodejs") {
-    console.log(BANNER);
-    const serverTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    console.log("🗓️  Date:", new Date());
-    console.log("🕛 Server Timezone:", serverTimezone);
+  console.log(BANNER);
+  const serverTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  console.log("🗓️  Date:", new Date());
+  console.log("🕛 Server Timezone:", serverTimezone);
 
+  if (process.env.NEXT_RUNTIME === "nodejs") {
     logEnvConfigStatus();
   }
 }

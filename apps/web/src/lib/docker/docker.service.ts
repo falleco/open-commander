@@ -23,11 +23,6 @@ export const dockerService = {
    * @param options - Container settings including image, ports, env, mounts, and args.
    */
   async run(options: DockerRunOptions) {
-    console.log(
-      "Running container:",
-      JSON.stringify(options.env, null, 2),
-      env.GH_TOKEN,
-    );
     const args: string[] = ["run"];
     if (options.detach ?? true) {
       args.push("-d");
