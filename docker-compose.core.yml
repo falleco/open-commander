@@ -1,0 +1,130 @@
+services:
+  ################
+  # Egress Proxy #
+  ################
+  egress-proxy:
+    build:
+      context: ./docker/egress
+    container_name: open-commander-egress-proxy
+    ports:
+      - "3128:3128"
+    expose:
+      - "3128"
+    volumes:
+      - ./docker/egress/entrypoint.sh:/entrypoint.sh:ro
+      - ./docker/egress/allowed-domains.txt:/etc/squid/allowed-domains.txt:ro
+      - ./docker/egress/allowed-ips.txt:/etc/squid/allowed-ips.txt:ro
+    networks:
+      - open-commander-internal
+      - open-commander-egress
+    read_only: true
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    tmpfs:
+      - /tmp
+      - /var/cache/squid
+      - /var/log/squid
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  ########################
+  #   Docker-in-Docker   #
+  ########################
+  docker-dind:
+    image: docker:27-dind
+    container_name: open-commander-dind
+    privileged: true
+    command:
+      - --host=tcp://0.0.0.0:2376
+      - --host=unix:///var/run/docker.sock
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs
+      - HTTP_PROXY=http://egress-proxy:3128
+      - HTTPS_PROXY=http://egress-proxy:3128
+      - NO_PROXY=localhost,127.0.0.1,::1,egress-proxy,docker
+    networks:
+      open-commander-internal:
+        aliases:
+          - docker
+      open-commander-egress:
+        aliases:
+          - docker
+    volumes:
+      - open-commander-dind-data:/var/lib/docker
+      - open-commander-dind-certs:/certs
+      - /tmp
+    init: true
+    stop_grace_period: 30s
+    restart: unless-stopped
+
+  ########################
+  #   Docker-in-Docker   #
+  ########################
+  dind-proxy:
+    image: alpine/socat
+    container_name: open-commander-dind-proxy
+    network_mode: service:docker-dind
+    depends_on:
+      - docker-dind
+      - egress-proxy
+    command:
+      - -d
+      - -d
+      - TCP-LISTEN:3128,fork,reuseaddr
+      - TCP:egress-proxy:3128
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: commander-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: commander_dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: commander-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
+###############
+#   Volumes   #
+###############
+volumes:
+  open-commander-auth:
+  open-commander-dind-data:
+  open-commander-dind-certs:
+  commander_node_modules:
+  postgres_data:
+  redis_data:
+
+################
+#   Networks   #
+################
+networks:
+  open-commander-internal:
+    internal: true
+  open-commander-egress:
+  open-commander-ingress:

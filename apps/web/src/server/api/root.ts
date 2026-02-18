@@ -2,7 +2,6 @@ import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 import { adminRouter } from "./routers/admin";
 import { apiClientsRouter } from "./routers/api-clients";
 import { authRouter } from "./routers/auth";
-import { egressRouter } from "./routers/egress";
 import { presenceRouter } from "./routers/presence";
 import { projectRouter } from "./routers/projects";
 import { securityRouter } from "./routers/security";
@@ -14,7 +13,6 @@ export const appRouter = createTRPCRouter({
   auth: authRouter,
   admin: adminRouter,
   apiClients: apiClientsRouter,
-  egress: egressRouter,
   presence: presenceRouter,
   project: projectRouter,
   security: securityRouter,

@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckSquare, LogOut, Settings, Shield, Terminal } from "lucide-react";
+import { CheckSquare, LogOut, Settings, Shield } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useRef } from "react";
@@ -20,12 +20,6 @@ import type { AppUserButtonMenuItem } from "./app-user-button";
 import { AppUserButton, type AppUserButtonRef } from "./app-user-button";
 
 const USER_MENU: AppUserButtonMenuItem[] = [
-  {
-    label: "Sessions",
-    href: "/sessions-old",
-    icon: Terminal,
-    className: "md:hidden",
-  },
   {
     label: "Tasks",
     href: "/tasks",
@@ -72,7 +66,6 @@ export function AppNavbar({ user }: Props) {
     statusButtonRef.current?.close();
   }, []);
 
-  const isSessionsActive = pathname.startsWith("/sessions-old");
   const isTasksActive = pathname.startsWith("/tasks");
   const isSecurityActive = pathname.startsWith("/security");
 
@@ -90,19 +83,6 @@ export function AppNavbar({ user }: Props) {
     auth = (
       <div className="relative flex items-center gap-2">
         <TooltipProvider delayDuration={300}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                href="/sessions-old"
-                className={`hidden md:flex ${navIconBase} ${isSessionsActive ? navIconActive : ""}`}
-                aria-label="Sessions"
-                aria-current={isSessionsActive ? "page" : undefined}
-              >
-                <Terminal className="h-4 w-4" strokeWidth={1.6} aria-hidden />
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Sessions</TooltipContent>
-          </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <Link

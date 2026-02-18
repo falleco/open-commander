@@ -672,7 +672,7 @@ export function ApiClientsPanel() {
   const clients = clientsQuery.data ?? [];
 
   return (
-    <Card className="border-white/10 bg-(--oc-panel-strong) shadow-lg lg:col-span-2">
+    <Card className="h-full border-white/10 bg-(--oc-panel-strong) shadow-lg">
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle className="text-sm uppercase tracking-[0.3em] text-slate-400">
           API Clients
