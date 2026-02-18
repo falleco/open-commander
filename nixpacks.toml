@@ -14,4 +14,4 @@ cmds = [
 ]
 
 [start]
-cmd = "cd apps/web && bunx prisma migrate deploy && bun run db:seed && bun run start"
+cmd = "bun run --cwd apps/web start"
