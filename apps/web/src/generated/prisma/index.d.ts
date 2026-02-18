@@ -8480,6 +8480,7 @@ export namespace Prisma {
     id: string | null
     name: string | null
     folder: string | null
+    shared: boolean | null
     defaultCliId: $Enums.AgentProvider | null
     userId: string | null
     createdAt: Date | null
@@ -8490,6 +8491,7 @@ export namespace Prisma {
     id: string | null
     name: string | null
     folder: string | null
+    shared: boolean | null
     defaultCliId: $Enums.AgentProvider | null
     userId: string | null
     createdAt: Date | null
@@ -8500,6 +8502,7 @@ export namespace Prisma {
     id: number
     name: number
     folder: number
+    shared: number
     defaultCliId: number
     userId: number
     createdAt: number
@@ -8512,6 +8515,7 @@ export namespace Prisma {
     id?: true
     name?: true
     folder?: true
+    shared?: true
     defaultCliId?: true
     userId?: true
     createdAt?: true
@@ -8522,6 +8526,7 @@ export namespace Prisma {
     id?: true
     name?: true
     folder?: true
+    shared?: true
     defaultCliId?: true
     userId?: true
     createdAt?: true
@@ -8532,6 +8537,7 @@ export namespace Prisma {
     id?: true
     name?: true
     folder?: true
+    shared?: true
     defaultCliId?: true
     userId?: true
     createdAt?: true
@@ -8615,6 +8621,7 @@ export namespace Prisma {
     id: string
     name: string
     folder: string
+    shared: boolean
     defaultCliId: $Enums.AgentProvider | null
     userId: string
     createdAt: Date
@@ -8642,6 +8649,7 @@ export namespace Prisma {
     id?: boolean
     name?: boolean
     folder?: boolean
+    shared?: boolean
     defaultCliId?: boolean
     userId?: boolean
     createdAt?: boolean
@@ -8655,6 +8663,7 @@ export namespace Prisma {
     id?: boolean
     name?: boolean
     folder?: boolean
+    shared?: boolean
     defaultCliId?: boolean
     userId?: boolean
     createdAt?: boolean
@@ -8666,6 +8675,7 @@ export namespace Prisma {
     id?: boolean
     name?: boolean
     folder?: boolean
+    shared?: boolean
     defaultCliId?: boolean
     userId?: boolean
     createdAt?: boolean
@@ -8677,13 +8687,14 @@ export namespace Prisma {
     id?: boolean
     name?: boolean
     folder?: boolean
+    shared?: boolean
     defaultCliId?: boolean
     userId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type ProjectOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "folder" | "defaultCliId" | "userId" | "createdAt" | "updatedAt", ExtArgs["result"]["project"]>
+  export type ProjectOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "folder" | "shared" | "defaultCliId" | "userId" | "createdAt" | "updatedAt", ExtArgs["result"]["project"]>
   export type ProjectInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
     sessions?: boolean | Project$sessionsArgs<ExtArgs>
@@ -8706,6 +8717,7 @@ export namespace Prisma {
       id: string
       name: string
       folder: string
+      shared: boolean
       defaultCliId: $Enums.AgentProvider | null
       userId: string
       createdAt: Date
@@ -9138,6 +9150,7 @@ export namespace Prisma {
     readonly id: FieldRef<"Project", 'String'>
     readonly name: FieldRef<"Project", 'String'>
     readonly folder: FieldRef<"Project", 'String'>
+    readonly shared: FieldRef<"Project", 'Boolean'>
     readonly defaultCliId: FieldRef<"Project", 'AgentProvider'>
     readonly userId: FieldRef<"Project", 'String'>
     readonly createdAt: FieldRef<"Project", 'DateTime'>
@@ -17633,6 +17646,7 @@ export namespace Prisma {
     id: 'id',
     name: 'name',
     folder: 'folder',
+    shared: 'shared',
     defaultCliId: 'defaultCliId',
     userId: 'userId',
     createdAt: 'createdAt',
@@ -18456,6 +18470,7 @@ export namespace Prisma {
     id?: StringFilter<"Project"> | string
     name?: StringFilter<"Project"> | string
     folder?: StringFilter<"Project"> | string
+    shared?: BoolFilter<"Project"> | boolean
     defaultCliId?: EnumAgentProviderNullableFilter<"Project"> | $Enums.AgentProvider | null
     userId?: StringFilter<"Project"> | string
     createdAt?: DateTimeFilter<"Project"> | Date | string
@@ -18468,6 +18483,7 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     folder?: SortOrder
+    shared?: SortOrder
     defaultCliId?: SortOrderInput | SortOrder
     userId?: SortOrder
     createdAt?: SortOrder
@@ -18483,6 +18499,7 @@ export namespace Prisma {
     NOT?: ProjectWhereInput | ProjectWhereInput[]
     name?: StringFilter<"Project"> | string
     folder?: StringFilter<"Project"> | string
+    shared?: BoolFilter<"Project"> | boolean
     defaultCliId?: EnumAgentProviderNullableFilter<"Project"> | $Enums.AgentProvider | null
     userId?: StringFilter<"Project"> | string
     createdAt?: DateTimeFilter<"Project"> | Date | string
@@ -18495,6 +18512,7 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     folder?: SortOrder
+    shared?: SortOrder
     defaultCliId?: SortOrderInput | SortOrder
     userId?: SortOrder
     createdAt?: SortOrder
@@ -18511,6 +18529,7 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"Project"> | string
     name?: StringWithAggregatesFilter<"Project"> | string
     folder?: StringWithAggregatesFilter<"Project"> | string
+    shared?: BoolWithAggregatesFilter<"Project"> | boolean
     defaultCliId?: EnumAgentProviderNullableWithAggregatesFilter<"Project"> | $Enums.AgentProvider | null
     userId?: StringWithAggregatesFilter<"Project"> | string
     createdAt?: DateTimeWithAggregatesFilter<"Project"> | Date | string
@@ -19620,6 +19639,7 @@ export namespace Prisma {
     id?: string
     name: string
     folder: string
+    shared?: boolean
     defaultCliId?: $Enums.AgentProvider | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -19631,6 +19651,7 @@ export namespace Prisma {
     id?: string
     name: string
     folder: string
+    shared?: boolean
     defaultCliId?: $Enums.AgentProvider | null
     userId: string
     createdAt?: Date | string
@@ -19642,6 +19663,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     folder?: StringFieldUpdateOperationsInput | string
+    shared?: BoolFieldUpdateOperationsInput | boolean
     defaultCliId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -19653,6 +19675,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     folder?: StringFieldUpdateOperationsInput | string
+    shared?: BoolFieldUpdateOperationsInput | boolean
     defaultCliId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
     userId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -19664,6 +19687,7 @@ export namespace Prisma {
     id?: string
     name: string
     folder: string
+    shared?: boolean
     defaultCliId?: $Enums.AgentProvider | null
     userId: string
     createdAt?: Date | string
@@ -19674,6 +19698,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     folder?: StringFieldUpdateOperationsInput | string
+    shared?: BoolFieldUpdateOperationsInput | boolean
     defaultCliId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -19683,6 +19708,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     folder?: StringFieldUpdateOperationsInput | string
+    shared?: BoolFieldUpdateOperationsInput | boolean
     defaultCliId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
     userId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -20819,6 +20845,7 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     folder?: SortOrder
+    shared?: SortOrder
     defaultCliId?: SortOrder
     userId?: SortOrder
     createdAt?: SortOrder
@@ -20829,6 +20856,7 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     folder?: SortOrder
+    shared?: SortOrder
     defaultCliId?: SortOrder
     userId?: SortOrder
     createdAt?: SortOrder
@@ -20839,6 +20867,7 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     folder?: SortOrder
+    shared?: SortOrder
     defaultCliId?: SortOrder
     userId?: SortOrder
     createdAt?: SortOrder
@@ -22733,6 +22762,7 @@ export namespace Prisma {
     id?: string
     name: string
     folder: string
+    shared?: boolean
     defaultCliId?: $Enums.AgentProvider | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -22743,6 +22773,7 @@ export namespace Prisma {
     id?: string
     name: string
     folder: string
+    shared?: boolean
     defaultCliId?: $Enums.AgentProvider | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -22986,6 +23017,7 @@ export namespace Prisma {
     id?: StringFilter<"Project"> | string
     name?: StringFilter<"Project"> | string
     folder?: StringFilter<"Project"> | string
+    shared?: BoolFilter<"Project"> | boolean
     defaultCliId?: EnumAgentProviderNullableFilter<"Project"> | $Enums.AgentProvider | null
     userId?: StringFilter<"Project"> | string
     createdAt?: DateTimeFilter<"Project"> | Date | string
@@ -23346,6 +23378,7 @@ export namespace Prisma {
     id?: string
     name: string
     folder: string
+    shared?: boolean
     defaultCliId?: $Enums.AgentProvider | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -23356,6 +23389,7 @@ export namespace Prisma {
     id?: string
     name: string
     folder: string
+    shared?: boolean
     defaultCliId?: $Enums.AgentProvider | null
     userId: string
     createdAt?: Date | string
@@ -23552,6 +23586,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     folder?: StringFieldUpdateOperationsInput | string
+    shared?: BoolFieldUpdateOperationsInput | boolean
     defaultCliId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -23562,6 +23597,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     folder?: StringFieldUpdateOperationsInput | string
+    shared?: BoolFieldUpdateOperationsInput | boolean
     defaultCliId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
     userId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -24924,6 +24960,7 @@ export namespace Prisma {
     id?: string
     name: string
     folder: string
+    shared?: boolean
     defaultCliId?: $Enums.AgentProvider | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -25129,6 +25166,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     folder?: StringFieldUpdateOperationsInput | string
+    shared?: BoolFieldUpdateOperationsInput | boolean
     defaultCliId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -25139,6 +25177,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     folder?: StringFieldUpdateOperationsInput | string
+    shared?: BoolFieldUpdateOperationsInput | boolean
     defaultCliId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -25149,6 +25188,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     folder?: StringFieldUpdateOperationsInput | string
+    shared?: BoolFieldUpdateOperationsInput | boolean
     defaultCliId?: NullableEnumAgentProviderFieldUpdateOperationsInput | $Enums.AgentProvider | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string

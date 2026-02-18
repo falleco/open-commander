@@ -10,6 +10,7 @@ type PresenceEntry = {
   user: {
     id: string;
     name: string;
+    email: string;
     image: string | null;
     avatarImageUrl: string | null;
   };
@@ -126,13 +127,10 @@ export function SessionPresenceAvatars({
       {[...visible.entries()].map(([userId, p]) => {
         const anim = anims.get(userId);
 
-        const initials = p.user.name
-          .split(" ")
-          .map((w) => w[0])
-          .join("")
-          .slice(0, 2)
-          .toUpperCase();
-        const src = p.user.avatarImageUrl ?? p.user.image ?? undefined;
+        const src =
+          p.user.avatarImageUrl ??
+          p.user.image ??
+          `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${encodeURIComponent(p.user.email)}`;
 
         let animationStyle: React.CSSProperties | undefined;
         if (anim?.kind === "entering") {
@@ -151,8 +149,8 @@ export function SessionPresenceAvatars({
             className={`h-5 w-5 border-2 ${borderColorMap[p.status]}`}
             style={animationStyle}
           >
-            {src && <AvatarImage src={src} alt={p.user.name} />}
-            <AvatarFallback className="text-[8px]">{initials}</AvatarFallback>
+            <AvatarImage src={src} alt={p.user.name} />
+            <AvatarFallback className="text-[8px]" />
           </Avatar>
         );
       })}

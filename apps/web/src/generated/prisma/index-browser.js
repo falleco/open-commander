@@ -198,6 +198,7 @@ exports.Prisma.ProjectScalarFieldEnum = {
   id: 'id',
   name: 'name',
   folder: 'folder',
+  shared: 'shared',
   defaultCliId: 'defaultCliId',
   userId: 'userId',
   createdAt: 'createdAt',

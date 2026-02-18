@@ -8,6 +8,7 @@ import {
   Menu,
   Plus,
   Settings,
+  Users,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -254,199 +255,213 @@ export function AppSidebar() {
                   No projects yet.
                 </p>
               ) : (
-                projects.map((project: { id: string; name: string }) => {
-                  const isExpanded = expandedProjectId === project.id;
-                  return (
-                    <div key={project.id}>
-                      <button
-                        type="button"
-                        className={`${mobileLinkBase} w-full text-left ${
-                          selectedProjectId === project.id
-                            ? "bg-emerald-400/15 text-emerald-200"
-                            : ""
-                        }`}
-                        onClick={() => handleMobileProjectClick(project.id)}
-                      >
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-white/10 text-[10px] font-bold uppercase">
-                          {project.name.slice(0, 2)}
-                        </span>
-                        <span className="min-w-0 flex-1 truncate">
-                          {project.name}
-                        </span>
-                        <ChevronDown
-                          className={`h-4 w-4 shrink-0 text-slate-500 transition-transform duration-150 ${isExpanded ? "rotate-0" : "-rotate-90"}`}
-                          strokeWidth={1.6}
-                          aria-hidden
-                        />
-                      </button>
-
-                      {isExpanded && (
-                        <div className="flex flex-col gap-0.5 py-1 pl-5">
-                          {/* Create session — always first */}
-                          <button
-                            type="button"
-                            className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-emerald-400 transition-colors hover:bg-emerald-400/10 hover:text-emerald-300"
-                            onClick={handleMobileCreateSession}
-                            disabled={createSessionMutation.isPending}
-                          >
-                            {createSessionMutation.isPending ? (
-                              <Loader2
-                                className="h-3.5 w-3.5 animate-spin"
-                                aria-hidden
-                              />
-                            ) : (
-                              <Plus
-                                className="h-3.5 w-3.5"
-                                strokeWidth={2}
-                                aria-hidden
-                              />
-                            )}
-                            Create Session
-                          </button>
-
-                          {sessionsQuery.isLoading ? (
-                            <div className="flex items-center gap-2 px-3 py-2 text-xs text-slate-500">
-                              <Loader2
-                                className="h-3 w-3 animate-spin"
-                                aria-hidden
-                              />
-                              Loading…
-                            </div>
-                          ) : (
-                            buildSessionTree(mobileSessions).map((node) => {
-                              const {
-                                session,
-                                depth,
-                                relationType,
-                                isLastChild,
-                                connectorColumns,
-                              } = node;
-                              const isActive =
-                                selectedProjectId === project.id &&
-                                session.id === selectedSessionId;
-                              const dotColor =
-                                session.status === "running"
-                                  ? "bg-emerald-400"
-                                  : session.status === "starting" ||
-                                      session.status === "pending"
-                                    ? "bg-yellow-400"
-                                    : "bg-slate-500";
-                              return (
-                                <div
-                                  key={session.id}
-                                  className="relative"
-                                  style={{ paddingLeft: `${depth * 20}px` }}
-                                >
-                                  {/* Downward line from parent dot to children */}
-                                  {node.hasChildren && (
-                                    <span
-                                      className="pointer-events-none absolute"
-                                      style={{
-                                        left: `${depth * 20 + 16}px`,
-                                        top: "50%",
-                                        bottom: "-4px",
-                                      }}
-                                      aria-hidden
-                                    >
-                                      <span className="absolute left-0 top-0 h-full w-px bg-slate-600" />
-                                    </span>
-                                  )}
-                                  {/* Ancestor continuation lines */}
-                                  {connectorColumns.map((col) => (
-                                    <span
-                                      key={col}
-                                      className="pointer-events-none absolute"
-                                      style={{
-                                        left: `${col * 20 + 16}px`,
-                                        top: "-4px",
-                                        bottom: "-4px",
-                                      }}
-                                      aria-hidden
-                                    >
-                                      <span className="absolute left-0 top-0 h-full w-px bg-slate-600" />
-                                    </span>
-                                  ))}
-                                  {/* Fork connector — vertical bar through the dot */}
-                                  {relationType === "fork" && (
-                                    <span
-                                      className="pointer-events-none absolute bottom-0"
-                                      style={{
-                                        left: `${depth * 20 + 16}px`,
-                                        top: "-4px",
-                                      }}
-                                      aria-hidden
-                                    >
-                                      <span
-                                        className="absolute left-0 top-0 w-px bg-slate-600"
-                                        style={{
-                                          height: isLastChild
-                                            ? "calc(50% + 2px)"
-                                            : "100%",
-                                        }}
-                                      />
-                                    </span>
-                                  )}
-                                  {/* Stack connector — L-shape from parent column */}
-                                  {relationType === "stack" && (
-                                    <span
-                                      className="pointer-events-none absolute bottom-0"
-                                      style={{
-                                        left: `${(depth - 1) * 20 + 16}px`,
-                                        top: "-4px",
-                                      }}
-                                      aria-hidden
-                                    >
-                                      <span
-                                        className="absolute left-0 top-0 w-px bg-slate-600"
-                                        style={{
-                                          height: isLastChild
-                                            ? "calc(50% + 2px)"
-                                            : "100%",
-                                        }}
-                                      />
-                                      <span
-                                        className="absolute left-0 h-px w-4 bg-slate-600"
-                                        style={{ top: "calc(50% + 2px)" }}
-                                      />
-                                    </span>
-                                  )}
-                                  <button
-                                    type="button"
-                                    className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors ${
-                                      isActive
-                                        ? "bg-emerald-400/15 text-emerald-200"
-                                        : "text-slate-300 hover:bg-white/5 hover:text-slate-100"
-                                    }`}
-                                    onClick={() => {
-                                      router.push(
-                                        `/projects/${project.id}/sessions/${session.id}`,
-                                      );
-                                      setMobileOpen(false);
-                                    }}
-                                  >
-                                    <span
-                                      className={`relative z-10 h-2 w-2 shrink-0 rounded-full ${dotColor}`}
-                                      aria-hidden
-                                    />
-                                    <span className="truncate">
-                                      {session.name}
-                                    </span>
-                                    <span className="ml-auto">
-                                      <SessionPresenceAvatars
-                                        sessionId={session.id}
-                                        presences={mobilePresences}
-                                      />
-                                    </span>
-                                  </button>
-                                </div>
-                              );
-                            })
+                projects.map(
+                  (project: {
+                    id: string;
+                    name: string;
+                    shared: boolean;
+                    userId: string;
+                  }) => {
+                    const isExpanded = expandedProjectId === project.id;
+                    return (
+                      <div key={project.id}>
+                        <button
+                          type="button"
+                          className={`${mobileLinkBase} w-full text-left ${
+                            selectedProjectId === project.id
+                              ? "bg-emerald-400/15 text-emerald-200"
+                              : ""
+                          }`}
+                          onClick={() => handleMobileProjectClick(project.id)}
+                        >
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-white/10 text-[10px] font-bold uppercase">
+                            {project.name.slice(0, 2)}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate">
+                            {project.name}
+                          </span>
+                          {project.shared && (
+                            <Users
+                              className="h-3.5 w-3.5 shrink-0 text-purple-400"
+                              strokeWidth={1.6}
+                              aria-hidden
+                            />
                           )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
+                          <ChevronDown
+                            className={`h-4 w-4 shrink-0 text-slate-500 transition-transform duration-150 ${isExpanded ? "rotate-0" : "-rotate-90"}`}
+                            strokeWidth={1.6}
+                            aria-hidden
+                          />
+                        </button>
+
+                        {isExpanded && (
+                          <div className="flex flex-col gap-0.5 py-1 pl-5">
+                            {/* Create session — always first */}
+                            <button
+                              type="button"
+                              className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-emerald-400 transition-colors hover:bg-emerald-400/10 hover:text-emerald-300"
+                              onClick={handleMobileCreateSession}
+                              disabled={createSessionMutation.isPending}
+                            >
+                              {createSessionMutation.isPending ? (
+                                <Loader2
+                                  className="h-3.5 w-3.5 animate-spin"
+                                  aria-hidden
+                                />
+                              ) : (
+                                <Plus
+                                  className="h-3.5 w-3.5"
+                                  strokeWidth={2}
+                                  aria-hidden
+                                />
+                              )}
+                              Create Session
+                            </button>
+
+                            {sessionsQuery.isLoading ? (
+                              <div className="flex items-center gap-2 px-3 py-2 text-xs text-slate-500">
+                                <Loader2
+                                  className="h-3 w-3 animate-spin"
+                                  aria-hidden
+                                />
+                                Loading…
+                              </div>
+                            ) : (
+                              buildSessionTree(mobileSessions).map((node) => {
+                                const {
+                                  session,
+                                  depth,
+                                  relationType,
+                                  isLastChild,
+                                  connectorColumns,
+                                } = node;
+                                const isActive =
+                                  selectedProjectId === project.id &&
+                                  session.id === selectedSessionId;
+                                const dotColor =
+                                  session.status === "running"
+                                    ? "bg-emerald-400"
+                                    : session.status === "starting" ||
+                                        session.status === "pending"
+                                      ? "bg-yellow-400"
+                                      : "bg-slate-500";
+                                return (
+                                  <div
+                                    key={session.id}
+                                    className="relative"
+                                    style={{ paddingLeft: `${depth * 20}px` }}
+                                  >
+                                    {/* Downward line from parent dot to children */}
+                                    {node.hasChildren && (
+                                      <span
+                                        className="pointer-events-none absolute"
+                                        style={{
+                                          left: `${depth * 20 + 16}px`,
+                                          top: "50%",
+                                          bottom: "-4px",
+                                        }}
+                                        aria-hidden
+                                      >
+                                        <span className="absolute left-0 top-0 h-full w-px bg-slate-600" />
+                                      </span>
+                                    )}
+                                    {/* Ancestor continuation lines */}
+                                    {connectorColumns.map((col) => (
+                                      <span
+                                        key={col}
+                                        className="pointer-events-none absolute"
+                                        style={{
+                                          left: `${col * 20 + 16}px`,
+                                          top: "-4px",
+                                          bottom: "-4px",
+                                        }}
+                                        aria-hidden
+                                      >
+                                        <span className="absolute left-0 top-0 h-full w-px bg-slate-600" />
+                                      </span>
+                                    ))}
+                                    {/* Fork connector — vertical bar through the dot */}
+                                    {relationType === "fork" && (
+                                      <span
+                                        className="pointer-events-none absolute bottom-0"
+                                        style={{
+                                          left: `${depth * 20 + 16}px`,
+                                          top: "-4px",
+                                        }}
+                                        aria-hidden
+                                      >
+                                        <span
+                                          className="absolute left-0 top-0 w-px bg-slate-600"
+                                          style={{
+                                            height: isLastChild
+                                              ? "calc(50% + 2px)"
+                                              : "100%",
+                                          }}
+                                        />
+                                      </span>
+                                    )}
+                                    {/* Stack connector — L-shape from parent column */}
+                                    {relationType === "stack" && (
+                                      <span
+                                        className="pointer-events-none absolute bottom-0"
+                                        style={{
+                                          left: `${(depth - 1) * 20 + 16}px`,
+                                          top: "-4px",
+                                        }}
+                                        aria-hidden
+                                      >
+                                        <span
+                                          className="absolute left-0 top-0 w-px bg-slate-600"
+                                          style={{
+                                            height: isLastChild
+                                              ? "calc(50% + 2px)"
+                                              : "100%",
+                                          }}
+                                        />
+                                        <span
+                                          className="absolute left-0 h-px w-4 bg-slate-600"
+                                          style={{ top: "calc(50% + 2px)" }}
+                                        />
+                                      </span>
+                                    )}
+                                    <button
+                                      type="button"
+                                      className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                                        isActive
+                                          ? "bg-emerald-400/15 text-emerald-200"
+                                          : "text-slate-300 hover:bg-white/5 hover:text-slate-100"
+                                      }`}
+                                      onClick={() => {
+                                        router.push(
+                                          `/projects/${project.id}/sessions/${session.id}`,
+                                        );
+                                        setMobileOpen(false);
+                                      }}
+                                    >
+                                      <span
+                                        className={`relative z-10 h-2 w-2 shrink-0 rounded-full ${dotColor}`}
+                                        aria-hidden
+                                      />
+                                      <span className="truncate">
+                                        {session.name}
+                                      </span>
+                                      <span className="ml-auto">
+                                        <SessionPresenceAvatars
+                                          sessionId={session.id}
+                                          presences={mobilePresences}
+                                        />
+                                      </span>
+                                    </button>
+                                  </div>
+                                );
+                              })
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  },
+                )
               )}
               <button
                 type="button"
@@ -509,14 +524,22 @@ export function AppSidebar() {
             <div className="h-px w-8 bg-purple-500/25" />
 
             {/* Project icons */}
-            {projects.map((project: { id: string; name: string }) => (
-              <ProjectIcon
-                key={project.id}
-                name={project.name}
-                isActive={selectedProjectId === project.id}
-                href={`/projects/${project.id}`}
-              />
-            ))}
+            {projects.map(
+              (project: {
+                id: string;
+                name: string;
+                shared: boolean;
+                userId: string;
+              }) => (
+                <ProjectIcon
+                  key={project.id}
+                  name={project.name}
+                  isActive={selectedProjectId === project.id}
+                  href={`/projects/${project.id}`}
+                  shared={project.shared}
+                />
+              ),
+            )}
             <Tooltip>
               <TooltipTrigger asChild>
                 <button

@@ -48,6 +48,23 @@ const ensureMySession = async (id: string, userId: string) => {
   }
 };
 
+/** Allows access if the session is owned by the user OR belongs to a shared project. */
+const ensureSessionAccess = async (id: string, userId: string) => {
+  const session = await db.terminalSession.findFirst({
+    where: {
+      id,
+      OR: [{ userId }, { project: { shared: true } }],
+    },
+  });
+  if (!session) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Session not found or not owned by the user.",
+    });
+  }
+  return session;
+};
+
 export const terminalRouter = createTRPCRouter({
   listSessions: protectedProcedure.query(async ({ ctx }) => {
     return ctx.db.terminalSession.findMany({
@@ -252,9 +269,12 @@ export const terminalRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await ensureMySession(input.sessionId, ctx.session.user.id);
+      const session = await ensureSessionAccess(
+        input.sessionId,
+        ctx.session.user.id,
+      );
 
-      return sessionService.start(ctx.session.user.id, input.sessionId, {
+      return sessionService.start(session.userId, input.sessionId, {
         reset: input.reset,
         workspaceSuffix: input.workspaceSuffix,
         gitBranch: input.gitBranch,
@@ -310,7 +330,7 @@ export const terminalRouter = createTRPCRouter({
   listPortMappings: protectedProcedure
     .input(z.object({ sessionId: sessionIdSchema }))
     .query(async ({ ctx, input }) => {
-      await ensureMySession(input.sessionId, ctx.session.user.id);
+      await ensureSessionAccess(input.sessionId, ctx.session.user.id);
       const mappings = await portProxyService.list(input.sessionId);
       return { mappings };
     }),
@@ -323,7 +343,7 @@ export const terminalRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await ensureMySession(input.sessionId, ctx.session.user.id);
+      await ensureSessionAccess(input.sessionId, ctx.session.user.id);
       const available = await isPortAvailable(input.hostPort);
       if (!available) {
         throw new TRPCError({
@@ -355,7 +375,7 @@ export const terminalRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await ensureMySession(input.sessionId, ctx.session.user.id);
+      await ensureSessionAccess(input.sessionId, ctx.session.user.id);
       return portProxyService.remove(
         input.sessionId,
         input.hostPort,

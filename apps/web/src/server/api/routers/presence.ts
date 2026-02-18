@@ -65,6 +65,7 @@ export const presenceRouter = createTRPCRouter({
             select: {
               id: true,
               name: true,
+              email: true,
               image: true,
               avatarImageUrl: true,
             },

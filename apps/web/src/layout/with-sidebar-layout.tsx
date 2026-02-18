@@ -91,7 +91,7 @@ function LayoutInner({
 
 export function WithSidebarLayout(props: WithSidebarLayoutProps) {
   return (
-    <ProjectProvider>
+    <ProjectProvider userId={props.user?.id}>
       <LayoutInner {...props} />
     </ProjectProvider>
   );

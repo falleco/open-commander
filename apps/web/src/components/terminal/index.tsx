@@ -896,8 +896,8 @@ export function TerminalPane({
             }
             break;
           case "1":
-            document.title =
-              typeof payload === "string" ? payload : decoder.decode(payload);
+            // document.title =
+            //   typeof payload === "string" ? payload : decoder.decode(payload);
             break;
           case "2":
             break;

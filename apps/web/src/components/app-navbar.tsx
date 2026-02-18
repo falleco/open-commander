@@ -139,7 +139,10 @@ export function AppNavbar({ user }: Props) {
           <AppUserButton
             ref={userButtonRef}
             menuEntries={USER_MENU}
-            avatarSrc={user.image ?? undefined}
+            avatarSrc={
+              user.image ??
+              `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${encodeURIComponent(user.email)}`
+            }
             avatarAlt={user.name ?? "User avatar"}
             onOpen={onUserMenuOpen}
           />

@@ -153,6 +153,7 @@ model Project {
   id           String         @id @default(cuid())
   name         String
   folder       String
+  shared       Boolean        @default(false)
   defaultCliId AgentProvider? @map("default_cli_id")
   userId       String         @map("user_id")
   user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)

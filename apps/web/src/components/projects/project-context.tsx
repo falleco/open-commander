@@ -12,6 +12,7 @@ import {
 } from "react";
 
 type ProjectContextValue = {
+  currentUserId: string | null;
   selectedProjectId: string | null;
   setSelectedProjectId: (id: string | null) => void;
   selectedSessionId: string | null;
@@ -37,7 +38,13 @@ const ProjectContext = createContext<ProjectContextValue | null>(null);
  * Provides project/session selection state derived from URL params.
  * Navigation is done via router.push so URLs are the source of truth.
  */
-export function ProjectProvider({ children }: { children: ReactNode }) {
+export function ProjectProvider({
+  children,
+  userId,
+}: {
+  children: ReactNode;
+  userId?: string;
+}) {
   const params = useParams();
   const router = useRouter();
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -98,8 +105,11 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
 
   const isPanelOpen = selectedProjectId !== null;
 
+  const currentUserId = userId ?? null;
+
   const value = useMemo(
     () => ({
+      currentUserId,
       selectedProjectId,
       setSelectedProjectId,
       selectedSessionId,
@@ -114,6 +124,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       getSessionGitBranch,
     }),
     [
+      currentUserId,
       selectedProjectId,
       setSelectedProjectId,
       selectedSessionId,

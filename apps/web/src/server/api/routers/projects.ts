@@ -13,6 +13,7 @@ const folderSchema = z.string().trim().min(1).max(120);
 const sessionNameSchema = z.string().trim().min(1).max(120);
 const agentIdSchema = z.enum(AGENT_IDS as unknown as [string, ...string[]]);
 
+/** Owner-only check. */
 const ensureMyProject = async (
   db: typeof dbClient,
   id: string,
@@ -30,11 +31,30 @@ const ensureMyProject = async (
   return project;
 };
 
+/** Owner OR shared project access. */
+const ensureProjectAccess = async (
+  db: typeof dbClient,
+  id: string,
+  userId: string,
+) => {
+  const project = await db.project.findFirst({
+    where: { id, OR: [{ userId }, { shared: true }] },
+  });
+  if (!project) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Project not found.",
+    });
+  }
+  return project;
+};
+
 export const projectRouter = createTRPCRouter({
   list: protectedProcedure.query(async ({ ctx }) => {
     return ctx.db.project.findMany({
-      where: { userId: ctx.session.user.id },
+      where: { OR: [{ userId: ctx.session.user.id }, { shared: true }] },
       orderBy: { createdAt: "asc" },
+      include: { user: { select: { id: true, name: true } } },
     });
   }),
 
@@ -44,6 +64,7 @@ export const projectRouter = createTRPCRouter({
         name: projectNameSchema,
         folder: folderSchema,
         defaultCliId: agentIdSchema.nullable().optional(),
+        shared: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -51,6 +72,7 @@ export const projectRouter = createTRPCRouter({
         data: {
           name: input.name,
           folder: input.folder,
+          shared: input.shared ?? false,
           defaultCliId: (input.defaultCliId as AgentProvider) ?? null,
           user: { connect: { id: ctx.session.user.id } },
         },
@@ -83,9 +105,9 @@ export const projectRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       await ensureMyProject(ctx.db, input.id, ctx.session.user.id);
 
-      // Stop and remove every session belonging to this project
+      // Stop ALL sessions for this project (shared projects may have other users')
       const sessions = await ctx.db.terminalSession.findMany({
-        where: { projectId: input.id, userId: ctx.session.user.id },
+        where: { projectId: input.id },
         select: { id: true },
       });
       await Promise.allSettled(
@@ -106,14 +128,19 @@ export const projectRouter = createTRPCRouter({
   listSessions: protectedProcedure
     .input(z.object({ projectId: projectIdSchema }))
     .query(async ({ ctx, input }) => {
-      await ensureMyProject(ctx.db, input.projectId, ctx.session.user.id);
+      const project = await ensureProjectAccess(
+        ctx.db,
+        input.projectId,
+        ctx.session.user.id,
+      );
       return ctx.db.terminalSession.findMany({
         where: {
           projectId: input.projectId,
-          userId: ctx.session.user.id,
+          ...(project.shared ? {} : { userId: ctx.session.user.id }),
           status: { in: ["running", "pending", "starting"] },
         },
         orderBy: { createdAt: "asc" },
+        include: { user: { select: { id: true, name: true } } },
       });
     }),
 
@@ -125,7 +152,7 @@ export const projectRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const project = await ensureMyProject(
+      const project = await ensureProjectAccess(
         ctx.db,
         input.projectId,
         ctx.session.user.id,
@@ -149,7 +176,7 @@ export const projectRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const project = await ensureMyProject(
+      const project = await ensureProjectAccess(
         ctx.db,
         input.projectId,
         ctx.session.user.id,
@@ -158,7 +185,7 @@ export const projectRouter = createTRPCRouter({
         where: {
           id: input.parentSessionId,
           projectId: project.id,
-          userId: ctx.session.user.id,
+          ...(project.shared ? {} : { userId: ctx.session.user.id }),
         },
       });
       if (!parent) {
@@ -188,7 +215,7 @@ export const projectRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const project = await ensureMyProject(
+      const project = await ensureProjectAccess(
         ctx.db,
         input.projectId,
         ctx.session.user.id,
@@ -197,7 +224,7 @@ export const projectRouter = createTRPCRouter({
         where: {
           id: input.parentSessionId,
           projectId: project.id,
-          userId: ctx.session.user.id,
+          ...(project.shared ? {} : { userId: ctx.session.user.id }),
         },
       });
       if (!parent) {
@@ -215,6 +242,47 @@ export const projectRouter = createTRPCRouter({
           relationType: "stack",
           status: "pending",
         },
+      });
+    }),
+
+  toggleShare: protectedProcedure
+    .input(z.object({ id: projectIdSchema, shared: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      const project = await ensureMyProject(
+        ctx.db,
+        input.id,
+        ctx.session.user.id,
+      );
+
+      // When unsharing, clean up non-owner sessions
+      if (!input.shared) {
+        const activeSessions = await ctx.db.terminalSession.findMany({
+          where: {
+            projectId: project.id,
+            userId: { not: project.userId },
+            status: { in: ["running", "pending", "starting"] },
+          },
+          select: { id: true },
+        });
+        await Promise.allSettled(
+          activeSessions.map(async (s) => {
+            await sessionService.stop(s.id).catch(() => {});
+            await portProxyService.removeAll(s.id).catch(() => {});
+          }),
+        );
+        await ctx.db.terminalSession.updateMany({
+          where: {
+            projectId: project.id,
+            userId: { not: project.userId },
+            status: { in: ["running", "pending", "starting"] },
+          },
+          data: { status: "stopped", projectId: null },
+        });
+      }
+
+      return ctx.db.project.update({
+        where: { id: input.id },
+        data: { shared: input.shared },
       });
     }),
 });

@@ -30,6 +30,7 @@ export function CreateProjectModal({
   const [folder, setFolder] = useState("");
   const [name, setName] = useState("");
   const [defaultCliId, setDefaultCliId] = useState("");
+  const [shared, setShared] = useState(false);
   const [nameManuallyEdited, setNameManuallyEdited] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const utils = api.useUtils();
@@ -56,6 +57,7 @@ export function CreateProjectModal({
     setFolder("");
     setName("");
     setDefaultCliId("");
+    setShared(false);
     setNameManuallyEdited(false);
     createMutation.reset();
     onClose();
@@ -87,9 +89,10 @@ export function CreateProjectModal({
         name: name.trim(),
         folder: folder.trim(),
         defaultCliId: defaultCliId || null,
+        shared,
       });
     },
-    [folder, name, createMutation, defaultCliId],
+    [folder, name, createMutation, defaultCliId, shared],
   );
 
   useEffect(() => {
@@ -97,6 +100,7 @@ export function CreateProjectModal({
       setFolder("");
       setName("");
       setDefaultCliId("");
+      setShared(false);
       setNameManuallyEdited(false);
       createMutation.reset();
     }
@@ -207,6 +211,32 @@ export function CreateProjectModal({
           <p className="text-xs text-slate-500">
             Optionally auto-start a CLI when new sessions connect.
           </p>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <div>
+            <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
+              Shared
+            </span>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Visible to all users. Anyone can create sessions.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={shared}
+            onClick={() => setShared(!shared)}
+            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
+              shared ? "bg-emerald-500" : "bg-white/10"
+            }`}
+          >
+            <span
+              className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
+                shared ? "translate-x-[18px]" : "translate-x-[3px]"
+              }`}
+            />
+          </button>
         </div>
 
         {createMutation.error && (

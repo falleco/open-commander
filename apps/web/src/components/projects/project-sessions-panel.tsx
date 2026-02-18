@@ -5,9 +5,11 @@ import {
   GitFork,
   Layers,
   Loader2,
+  Lock,
   MoreVertical,
   Pencil,
   Plus,
+  Share2,
   Trash2,
   X,
 } from "lucide-react";
@@ -47,6 +49,7 @@ type MenuState = {
  */
 export function ProjectSessionsPanel() {
   const {
+    currentUserId,
     selectedProjectId,
     selectedSessionId,
     setSelectedSessionId,
@@ -62,7 +65,18 @@ export function ProjectSessionsPanel() {
   });
   const project = projectQuery.data?.find(
     (p: { id: string }) => p.id === selectedProjectId,
-  );
+  ) as
+    | {
+        id: string;
+        name: string;
+        folder: string;
+        shared: boolean;
+        userId: string;
+        user?: { id: string; name: string };
+      }
+    | undefined;
+
+  const isOwner = project?.userId === currentUserId;
 
   const sessionsQuery = api.project.listSessions.useQuery(
     { projectId: selectedProjectId ?? "" },
@@ -144,6 +158,15 @@ export function ProjectSessionsPanel() {
     onSuccess: () => {
       void utils.project.list.invalidate();
       setSelectedProjectId(null);
+    },
+  });
+
+  const toggleShareMutation = api.project.toggleShare.useMutation({
+    onSuccess: () => {
+      void utils.project.list.invalidate();
+      void utils.project.listSessions.invalidate({
+        projectId: selectedProjectId ?? "",
+      });
     },
   });
 
@@ -326,6 +349,15 @@ export function ProjectSessionsPanel() {
     }
   }, [selectedProjectId, project, updateProjectMutation]);
 
+  const handleToggleShare = useCallback(() => {
+    setProjectMenu(null);
+    if (!selectedProjectId || !project) return;
+    toggleShareMutation.mutate({
+      id: selectedProjectId,
+      shared: !project.shared,
+    });
+  }, [selectedProjectId, project, toggleShareMutation]);
+
   const handleDeleteProject = useCallback(() => {
     setProjectMenu(null);
     setDeleteConfirmOpen(true);
@@ -377,6 +409,14 @@ export function ProjectSessionsPanel() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isPanelOpen, shortcutsOpen, handleCreateSession]);
 
+  /** Check if a session belongs to the current user by session ID. */
+  function isOwnSessionById(sessionId: string): boolean {
+    const s = sessions.find((s) => s.id === sessionId) as
+      | { user?: { id: string } }
+      | undefined;
+    return s?.user?.id === currentUserId;
+  }
+
   if (!isPanelOpen) return null;
 
   const statusColor = (status: string) => {
@@ -393,6 +433,12 @@ export function ProjectSessionsPanel() {
           {project?.name ?? "Project"}
         </span>
         <div className="flex items-center gap-1">
+          {project?.shared && (
+            <span className="flex items-center gap-1 rounded-full bg-purple-500/15 px-2 py-0.5 text-[10px] font-medium text-purple-300">
+              <Share2 className="h-2.5 w-2.5" strokeWidth={2} aria-hidden />
+              Shared
+            </span>
+          )}
           <TooltipProvider delayDuration={300}>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -533,6 +579,10 @@ export function ProjectSessionsPanel() {
                 connectorColumns,
               } = node;
               const isActive = session.id === selectedSessionId;
+              const sessionUser = (
+                session as { user?: { id: string; name: string } }
+              ).user;
+              const isOwnSession = sessionUser?.id === currentUserId;
               return (
                 <div
                   key={session.id}
@@ -618,6 +668,11 @@ export function ProjectSessionsPanel() {
                       aria-hidden
                     />
                     <span className="truncate">{session.name}</span>
+                    {project?.shared && !isOwnSession && sessionUser && (
+                      <span className="shrink-0 rounded bg-purple-500/15 px-1.5 py-0.5 text-[10px] text-purple-300">
+                        {sessionUser.name}
+                      </span>
+                    )}
                     <span className="ml-auto group-hover:hidden">
                       <SessionPresenceAvatars
                         sessionId={session.id}
@@ -730,14 +785,16 @@ export function ProjectSessionsPanel() {
               Stack
             </button>
           )}
-          <button
-            type="button"
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-rose-300 transition hover:bg-rose-500/10"
-            onClick={() => handleRemove(sessionMenu.id)}
-          >
-            <Trash2 className="h-3.5 w-3.5" strokeWidth={1.6} aria-hidden />
-            Remove
-          </button>
+          {(isOwnSessionById(sessionMenu.id) || isOwner) && (
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-rose-300 transition hover:bg-rose-500/10"
+              onClick={() => handleRemove(sessionMenu.id)}
+            >
+              <Trash2 className="h-3.5 w-3.5" strokeWidth={1.6} aria-hidden />
+              Remove
+            </button>
+          )}
         </div>
       )}
 
@@ -745,25 +802,50 @@ export function ProjectSessionsPanel() {
       {projectMenu && (
         <div
           ref={projectMenuRef}
-          className="fixed z-[100] min-w-[140px] rounded-lg border border-white/10 bg-(--oc-panel-strong) py-1 shadow-xl"
+          className="fixed z-[100] min-w-[160px] rounded-lg border border-white/10 bg-(--oc-panel-strong) py-1 shadow-xl"
           style={{ left: projectMenu.x, top: projectMenu.y }}
         >
-          <button
-            type="button"
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-slate-200 transition hover:bg-white/10"
-            onClick={handleRenameProject}
-          >
-            <Pencil className="h-3.5 w-3.5" strokeWidth={1.6} aria-hidden />
-            Rename
-          </button>
-          <button
-            type="button"
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-rose-300 transition hover:bg-rose-500/10"
-            onClick={handleDeleteProject}
-          >
-            <Trash2 className="h-3.5 w-3.5" strokeWidth={1.6} aria-hidden />
-            Delete
-          </button>
+          {isOwner ? (
+            <>
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-slate-200 transition hover:bg-white/10"
+                onClick={handleRenameProject}
+              >
+                <Pencil className="h-3.5 w-3.5" strokeWidth={1.6} aria-hidden />
+                Rename
+              </button>
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-slate-200 transition hover:bg-white/10"
+                onClick={handleToggleShare}
+                disabled={toggleShareMutation.isPending}
+              >
+                {project?.shared ? (
+                  <Lock className="h-3.5 w-3.5" strokeWidth={1.6} aria-hidden />
+                ) : (
+                  <Share2
+                    className="h-3.5 w-3.5"
+                    strokeWidth={1.6}
+                    aria-hidden
+                  />
+                )}
+                {project?.shared ? "Make Private" : "Share"}
+              </button>
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-rose-300 transition hover:bg-rose-500/10"
+                onClick={handleDeleteProject}
+              >
+                <Trash2 className="h-3.5 w-3.5" strokeWidth={1.6} aria-hidden />
+                Delete
+              </button>
+            </>
+          ) : (
+            <div className="px-3 py-1.5 text-xs text-slate-400">
+              Shared by {project?.user?.name ?? "unknown"}
+            </div>
+          )}
         </div>
       )}
 
