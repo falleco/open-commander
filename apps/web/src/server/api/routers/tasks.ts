@@ -299,6 +299,7 @@ export const tasksRouter = createTRPCRouter({
         taskId: task.id,
         body: task.body ?? "",
         agentId: task.agentId,
+        userId,
         mountPoint:
           (task as { mountPoint?: string | null }).mountPoint ?? undefined,
       });

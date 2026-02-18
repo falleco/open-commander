@@ -1,9 +1,8 @@
-import { promises as fs } from "node:fs";
 import path from "node:path";
 import { env } from "@/env";
 import type { AgentProvider } from "@/generated/prisma";
 import { dockerService } from "./docker.service";
-import { DockerMountMode } from "./docker.types";
+import { buildAgentMounts } from "./mounts";
 
 const IMAGE = env.TTYD_IMAGE;
 const INTERNAL_NETWORK = env.TTYD_INTERNAL_NETWORK;
@@ -11,8 +10,6 @@ const EGRESS_PROXY_HOST = env.TTYD_EGRESS_PROXY_HOST;
 const EGRESS_PROXY_PORT = env.TTYD_EGRESS_PROXY_PORT;
 const DIND_HOST = "docker";
 const DIND_PORT = 2376;
-const DIND_CERTS_VOLUME =
-  env.DIND_CERTS_VOLUME ?? "open-commander_open-commander-dind-certs";
 
 const AGENT_WORKSPACE = env.AGENT_WORKSPACE
   ? path.resolve(env.AGENT_WORKSPACE)
@@ -22,6 +19,7 @@ export type TaskInput = {
   taskId: string;
   body: string;
   agentId: AgentProvider;
+  userId: string;
   mountPoint?: string; // Relative path within workspace to mount as /workspace
 };
 
@@ -41,30 +39,6 @@ function taskContainerName(executionId: string): string {
   return `oc-task-${executionId}`;
 }
 
-/**
- * Ensures Claude state directories exist.
- */
-async function ensureClaudeState(basePath: string) {
-  const claudeBase = path.resolve(basePath, "claude");
-  const claudeJson = path.join(claudeBase, ".claude.json");
-  const claudeDir = path.join(claudeBase, ".claude");
-  await fs.mkdir(claudeDir, { recursive: true });
-  try {
-    await fs.access(claudeJson);
-  } catch {
-    await fs.writeFile(claudeJson, "{}\n", { encoding: "utf8" });
-  }
-  return { claudeJson, claudeDir };
-}
-
-/**
- * Ensures agents config directory exists.
- */
-async function ensureAgentsConfig(basePath: string) {
-  await fs.mkdir(basePath, { recursive: true });
-  return { agentsConfig: basePath };
-}
-
 export const taskExecutionService = {
   /**
    * Execute a task in a container.
@@ -76,13 +50,8 @@ export const taskExecutionService = {
   ): Promise<{ containerName: string }> {
     const containerName = taskContainerName(executionId);
 
-    // Prepare state directories
-    const { claudeJson, claudeDir } = await ensureClaudeState(
-      `${env.COMMANDER_BASE_PATH}/.state`,
-    );
-    const { agentsConfig } = await ensureAgentsConfig(
-      `${env.COMMANDER_BASE_PATH}/agents`,
-    );
+    // Build agent mounts (per-user state)
+    const mounts = await buildAgentMounts(input.userId);
 
     // Ensure network exists
     await dockerService.ensureNetwork(INTERNAL_NETWORK, { internal: true });
@@ -112,29 +81,6 @@ export const taskExecutionService = {
       workspace: "/workspace",
       mountPoint: workspaceSubdir || null, // Include mount point info for the agent
     });
-
-    // Build mounts
-    const mounts = [
-      { source: claudeJson, target: "/home/commander/.claude.json" },
-      { source: claudeDir, target: "/home/commander/.claude" },
-      {
-        source: `${env.COMMANDER_BASE_PATH}/.state/codex`,
-        target: "/home/commander/.codex",
-      },
-      {
-        source: `${env.COMMANDER_BASE_PATH}/.state/cursor`,
-        target: "/home/commander/.cursor",
-      },
-      {
-        source: agentsConfig,
-        target: "/home/commander/.commander",
-      },
-      {
-        source: DIND_CERTS_VOLUME,
-        target: "/certs",
-        mode: DockerMountMode.ReadOnly,
-      },
-    ];
 
     // Add workspace mount if configured
     if (workspacePath) {

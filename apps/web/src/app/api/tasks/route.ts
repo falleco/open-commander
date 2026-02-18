@@ -356,6 +356,7 @@ export async function POST(request: NextRequest) {
         taskId: task.id,
         body: task.body,
         agentId: validAgentId,
+        userId: auth.user.id,
         repository: validRepository ?? undefined,
         mountPoint: validMountPoint ?? undefined,
       });

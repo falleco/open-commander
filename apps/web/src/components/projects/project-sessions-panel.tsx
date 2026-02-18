@@ -628,21 +628,23 @@ export function ProjectSessionsPanel() {
                     </span>
                   </button>
                   <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover:opacity-100">
-                    <button
-                      type="button"
-                      className="flex h-6 w-6 cursor-pointer items-center justify-center rounded text-slate-500 hover:bg-white/10 hover:text-slate-300"
-                      aria-label="Stack session"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleStack(session.id);
-                      }}
-                    >
-                      <Layers
-                        className="h-3 w-3"
-                        strokeWidth={1.6}
-                        aria-hidden
-                      />
-                    </button>
+                    {env.NEXT_PUBLIC_GIT_BUTLER_ENABLED && (
+                      <button
+                        type="button"
+                        className="flex h-6 w-6 cursor-pointer items-center justify-center rounded text-slate-500 hover:bg-white/10 hover:text-slate-300"
+                        aria-label="Stack session"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStack(session.id);
+                        }}
+                      >
+                        <Layers
+                          className="h-3 w-3"
+                          strokeWidth={1.6}
+                          aria-hidden
+                        />
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="flex h-6 w-6 cursor-pointer items-center justify-center rounded text-slate-500 hover:bg-white/10 hover:text-slate-300"
@@ -720,14 +722,16 @@ export function ProjectSessionsPanel() {
             <GitFork className="h-3.5 w-3.5" strokeWidth={1.6} aria-hidden />
             Fork
           </button>
-          <button
-            type="button"
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-slate-200 transition hover:bg-white/10"
-            onClick={() => handleStack(sessionMenu.id)}
-          >
-            <Layers className="h-3.5 w-3.5" strokeWidth={1.6} aria-hidden />
-            Stack
-          </button>
+          {env.NEXT_PUBLIC_GIT_BUTLER_ENABLED && (
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-slate-200 transition hover:bg-white/10"
+              onClick={() => handleStack(sessionMenu.id)}
+            >
+              <Layers className="h-3.5 w-3.5" strokeWidth={1.6} aria-hidden />
+              Stack
+            </button>
+          )}
           <button
             type="button"
             className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-rose-300 transition hover:bg-rose-500/10"

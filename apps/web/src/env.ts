@@ -58,6 +58,10 @@ export const env = createEnv({
       .string()
       .default("false")
       .transform((input) => input === "true"),
+    NEXT_PUBLIC_GIT_BUTLER_ENABLED: z
+      .string()
+      .default("false")
+      .transform((input) => input === "true"),
   },
   runtimeEnv: {
     TTYD_CONTAINER_NAME: process.env.TTYD_CONTAINER_NAME,
@@ -84,6 +88,8 @@ export const env = createEnv({
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     NEXT_PUBLIC_APPLE_AUTH_ENABLED: process.env.NEXT_PUBLIC_APPLE_AUTH_ENABLED,
     NEXT_PUBLIC_DISABLE_AUTH: process.env.NEXT_PUBLIC_DISABLE_AUTH,
+    NEXT_PUBLIC_GIT_BUTLER_ENABLED:
+      process.env.NEXT_PUBLIC_GIT_BUTLER_ENABLED,
     APPLE_CLIENT_ID: process.env.APPLE_CLIENT_ID,
     APPLE_CLIENT_SECRET: process.env.APPLE_CLIENT_SECRET,
     ENABLE_ARTIFICIAL_TRPC_DELAY: process.env.ENABLE_ARTIFICIAL_TRPC_DELAY,

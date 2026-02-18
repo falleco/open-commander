@@ -718,7 +718,7 @@ export default function TerminalDashboardPage() {
         </div>
       )}
 
-      <header className="relative z-10 flex shrink-0 flex-col gap-2">
+      <header className="relative z-10 flex shrink-0 flex-col gap-1 md:gap-2">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <AnimatedPageTitle
             icon={Terminal}

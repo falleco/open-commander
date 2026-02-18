@@ -19,6 +19,8 @@ export type AppUserButtonMenuItem = {
   href: string;
   icon: React.ElementType;
   onClick?: () => Promise<void>;
+  /** Extra CSS classes for the menu item (e.g. responsive visibility). */
+  className?: string;
 };
 
 type AppUserButtonProps = {
@@ -107,7 +109,10 @@ export const AppUserButton = forwardRef<AppUserButtonRef, AppUserButtonProps>(
               <a
                 key={item.label}
                 href={item.href}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-200 transition hover:bg-purple-500/15 hover:text-white"
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 text-sm text-slate-200 transition hover:bg-purple-500/15 hover:text-white",
+                  item.className,
+                )}
                 role="menuitem"
                 onClick={() => {
                   if (item.onClick) {

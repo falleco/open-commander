@@ -112,6 +112,7 @@ async function processCommander(job: Job): Promise<void> {
           taskId: task.id,
           body: task.body,
           agentId: task.agentId,
+          userId: task.userId,
           mountPoint: task.mountPoint ?? undefined,
         });
 
@@ -147,6 +148,7 @@ async function processCommander(job: Job): Promise<void> {
         taskId: task.id,
         body: task.body,
         agentId: task.agentId,
+        userId: task.userId,
         mountPoint: task.mountPoint ?? undefined,
       });
 

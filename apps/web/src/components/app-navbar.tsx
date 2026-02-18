@@ -20,6 +20,24 @@ import type { AppUserButtonMenuItem } from "./app-user-button";
 import { AppUserButton, type AppUserButtonRef } from "./app-user-button";
 
 const USER_MENU: AppUserButtonMenuItem[] = [
+  {
+    label: "Sessions",
+    href: "/sessions-old",
+    icon: Terminal,
+    className: "md:hidden",
+  },
+  {
+    label: "Tasks",
+    href: "/tasks",
+    icon: CheckSquare,
+    className: "md:hidden",
+  },
+  {
+    label: "Security",
+    href: "/security",
+    icon: Shield,
+    className: "md:hidden",
+  },
   { label: "Settings", href: "/settings", icon: Settings },
   {
     label: "Sign out",
@@ -76,7 +94,7 @@ export function AppNavbar({ user }: Props) {
             <TooltipTrigger asChild>
               <Link
                 href="/sessions-old"
-                className={`${navIconBase} ${isSessionsActive ? navIconActive : ""}`}
+                className={`hidden md:flex ${navIconBase} ${isSessionsActive ? navIconActive : ""}`}
                 aria-label="Sessions"
                 aria-current={isSessionsActive ? "page" : undefined}
               >
@@ -89,7 +107,7 @@ export function AppNavbar({ user }: Props) {
             <TooltipTrigger asChild>
               <Link
                 href="/tasks"
-                className={`${navIconBase} ${isTasksActive ? navIconActive : ""}`}
+                className={`hidden md:flex ${navIconBase} ${isTasksActive ? navIconActive : ""}`}
                 aria-label="Tasks"
                 aria-current={isTasksActive ? "page" : undefined}
               >
@@ -106,7 +124,7 @@ export function AppNavbar({ user }: Props) {
             <TooltipTrigger asChild>
               <Link
                 href="/security"
-                className={`${navIconBase} ${isSecurityActive ? navIconActive : ""}`}
+                className={`hidden md:flex ${navIconBase} ${isSecurityActive ? navIconActive : ""}`}
                 aria-label="Security"
                 aria-current={isSecurityActive ? "page" : undefined}
               >
@@ -131,7 +149,7 @@ export function AppNavbar({ user }: Props) {
   }
 
   return (
-    <nav className="flex items-center justify-between border-b border-purple-500/25 bg-(--oc-panel) px-6 py-4">
+    <nav className="flex shrink-0 items-center justify-between border-b border-purple-500/25 bg-(--oc-panel) px-4 py-3 md:px-6 md:py-4">
       <div className="flex items-center gap-4">
         <AppSidebarToggle className="md:hidden" />
         <AppBrandName />

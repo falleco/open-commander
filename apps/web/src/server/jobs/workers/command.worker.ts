@@ -12,7 +12,7 @@ import { redisConnection } from "@/server/jobs/redis";
  * Process a command job (task execution).
  */
 async function processCommandJob(job: Job<CommandQueueParams>): Promise<void> {
-  const { executionId, taskId, body, agentId, repository, mountPoint } =
+  const { executionId, taskId, body, agentId, userId, repository, mountPoint } =
     job.data;
 
   job.log(
@@ -72,6 +72,7 @@ async function processCommandJob(job: Job<CommandQueueParams>): Promise<void> {
       taskId,
       body,
       agentId,
+      userId,
       mountPoint: effectiveMountPoint,
     });
 

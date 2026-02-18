@@ -45,16 +45,18 @@ function LayoutInner({
 
   return (
     <AppSidebarProvider>
-      <div className="min-h-screen bg-background text-white">
-        <div className="flex min-h-screen flex-col">
+      <div className="h-dvh overscroll-none bg-background text-white">
+        <div className="flex h-full flex-col overflow-hidden">
           <AppNavbar user={user} />
 
           <div className="flex min-h-0 flex-1">
             {!hideSidebar && <AppSidebar />}
             <ProjectSessionsPanel />
             <main
-              className={`relative flex flex-1 flex-col ${
-                showInlineTerminal ? "gap-0 p-0 md:gap-8 md:p-8" : "gap-8 p-8"
+              className={`relative flex min-h-0 flex-1 flex-col ${
+                showInlineTerminal
+                  ? "gap-0 overflow-hidden p-0 md:gap-8 md:p-8"
+                  : "gap-4 overflow-y-auto p-4 md:gap-8 md:p-8"
               }`}
             >
               {showSquaresBackground && !showInlineTerminal && (

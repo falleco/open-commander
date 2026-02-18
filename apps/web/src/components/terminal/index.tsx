@@ -364,7 +364,203 @@ export function TerminalPane({
       });
       document.addEventListener("mouseup", handleMouseUp, { capture: true });
 
+      /**
+       * Touch scroll handling for mobile devices.
+       *
+       * Listeners live on `terminalHost` (parent div) in capture phase so
+       * they fire before xterm's own handlers.  stopPropagation prevents
+       * xterm from seeing touch events at all.
+       *
+       * Scroll amount works in *lines directly*:
+       *   lines = deltaPixels * SCROLL_GAIN / cellHeight
+       * SCROLL_GAIN > 1 makes a small swipe cover many lines (like a
+       * native list). Momentum converts the last swipe velocity (lines/ms)
+       * into a decaying animation.
+       */
+      const SCROLL_GAIN = 2.5;
+      const MOMENTUM_FRICTION = 0.95;
+      const MOMENTUM_MIN_VEL = 0.15; // lines/frame
+      const VEL_SAMPLES = 5;
+      let isTouching = false;
+      let touchLastY = 0;
+      let touchLastX = 0;
+      let lineResidue = 0; // fractional lines carried between moves
+      let touchMoveTime = 0;
+      let momentumRaf = 0;
+      const velRing: number[] = []; // lines/ms samples
+
+      const getCellHeight = () => {
+        const t = terminalRef.current;
+        if (!t || t.rows <= 0) return 17;
+        const el = t.element ?? terminalHost;
+        return Math.max(4, el.getBoundingClientRect().height / t.rows);
+      };
+
+      const emitScroll = (
+        t: Terminal,
+        lines: number,
+        dir: number,
+        cx: number,
+        cy: number,
+      ) => {
+        if (t.buffer.active.type === "alternate") {
+          const sendRaw = sendRawInputRef.current;
+          if (!sendRaw) return;
+          const el = t.element ?? terminalHost;
+          const rect = el.getBoundingClientRect();
+          const cw = t.cols > 0 ? rect.width / t.cols : 9;
+          const ch = t.rows > 0 ? rect.height / t.rows : 17;
+          const x = Math.min(
+            Math.max(1, Math.floor((cx - rect.left) / cw) + 1),
+            223,
+          );
+          const y = Math.min(
+            Math.max(1, Math.floor((cy - rect.top) / ch) + 1),
+            223,
+          );
+          const btn = dir < 0 ? 64 : 65;
+          const seq = `\x1b[M${String.fromCharCode(btn + 32)}${String.fromCharCode(x + 32)}${String.fromCharCode(y + 32)}`;
+          for (let i = 0; i < lines; i++) sendRaw(seq);
+          return;
+        }
+        t.scrollLines(dir * lines);
+      };
+
+      const stopMomentum = () => {
+        if (momentumRaf) {
+          cancelAnimationFrame(momentumRaf);
+          momentumRaf = 0;
+        }
+      };
+
+      const resetTouchState = () => {
+        isTouching = false;
+        lineResidue = 0;
+        touchMoveTime = 0;
+        velRing.length = 0;
+        stopMomentum();
+      };
+
+      const handleTouchStart = (event: TouchEvent) => {
+        if (!terminalRef.current) return;
+        if (event.touches.length !== 1) return;
+        stopMomentum();
+        isTouching = true;
+        touchLastY = event.touches[0].clientY;
+        touchLastX = event.touches[0].clientX;
+        lineResidue = 0;
+        touchMoveTime = 0;
+        velRing.length = 0;
+        event.preventDefault();
+        event.stopPropagation();
+      };
+
+      const handleTouchMove = (event: TouchEvent) => {
+        if (!isTouching) return;
+        const t = terminalRef.current;
+        if (!t) return;
+        if (event.touches.length !== 1) return;
+        event.preventDefault();
+        event.stopPropagation();
+
+        const now = performance.now();
+        const cy = event.touches[0].clientY;
+        const deltaY = touchLastY - cy; // positive = swipe up = scroll down
+        touchLastY = cy;
+        touchLastX = event.touches[0].clientX;
+
+        // Convert pixels → lines (with gain multiplier)
+        const ch = getCellHeight();
+        const deltaLines = (deltaY * SCROLL_GAIN) / ch;
+
+        // Track velocity in lines/ms (only between consecutive moves)
+        if (touchMoveTime > 0) {
+          const dt = Math.max(1, now - touchMoveTime);
+          velRing.push(deltaLines / dt);
+          if (velRing.length > VEL_SAMPLES) velRing.shift();
+        }
+        touchMoveTime = now;
+
+        // Accumulate fractional lines and emit whole lines
+        lineResidue += deltaLines;
+        const wholeLines = Math.trunc(lineResidue);
+        if (wholeLines !== 0) {
+          lineResidue -= wholeLines;
+          emitScroll(
+            t,
+            Math.abs(wholeLines),
+            wholeLines > 0 ? 1 : -1,
+            event.touches[0].clientX,
+            event.touches[0].clientY,
+          );
+        }
+      };
+
+      const handleTouchEnd = (event: TouchEvent) => {
+        if (!isTouching) return;
+        isTouching = false;
+        const t = terminalRef.current;
+        if (!t) return;
+        event.preventDefault();
+        event.stopPropagation();
+
+        // Average recent velocity → lines/ms
+        const avg =
+          velRing.length > 0
+            ? velRing.reduce((a, b) => a + b, 0) / velRing.length
+            : 0;
+        // Convert to lines/frame (~16ms)
+        let vel = avg * 16;
+        lineResidue = 0;
+        velRing.length = 0;
+
+        if (Math.abs(vel) < MOMENTUM_MIN_VEL) return;
+
+        let residual = 0;
+        const tick = () => {
+          if (!terminalRef.current) return;
+          vel *= MOMENTUM_FRICTION;
+          if (Math.abs(vel) < MOMENTUM_MIN_VEL) return;
+
+          residual += vel;
+          const whole = Math.trunc(residual);
+          if (whole !== 0) {
+            residual -= whole;
+            emitScroll(
+              terminalRef.current,
+              Math.abs(whole),
+              whole > 0 ? 1 : -1,
+              touchLastX,
+              touchLastY,
+            );
+          }
+          momentumRaf = requestAnimationFrame(tick);
+        };
+        momentumRaf = requestAnimationFrame(tick);
+      };
+
+      const handleTouchCancel = () => resetTouchState();
+
+      // Attach to terminalHost (parent), not wheelTarget (xterm element).
+      // Capture phase on the parent fires before xterm ever sees the event.
+      terminalHost.addEventListener("touchstart", handleTouchStart, {
+        passive: false,
+        capture: true,
+      });
+      terminalHost.addEventListener("touchmove", handleTouchMove, {
+        passive: false,
+        capture: true,
+      });
+      terminalHost.addEventListener("touchend", handleTouchEnd, {
+        passive: false,
+        capture: true,
+      });
+      terminalHost.addEventListener("touchcancel", handleTouchCancel, {
+        capture: true,
+      });
+
       removeWheelListener = () => {
+        resetTouchState();
         wheelTarget.removeEventListener("wheel", handleWheel, {
           capture: true,
         });
@@ -375,6 +571,18 @@ export function TerminalPane({
           capture: true,
         });
         document.removeEventListener("mouseup", handleMouseUp, {
+          capture: true,
+        });
+        terminalHost.removeEventListener("touchstart", handleTouchStart, {
+          capture: true,
+        });
+        terminalHost.removeEventListener("touchmove", handleTouchMove, {
+          capture: true,
+        });
+        terminalHost.removeEventListener("touchend", handleTouchEnd, {
+          capture: true,
+        });
+        terminalHost.removeEventListener("touchcancel", handleTouchCancel, {
           capture: true,
         });
       };
@@ -392,8 +600,13 @@ export function TerminalPane({
 
       const handleResize = () => fitAddon.fit();
       window.addEventListener("resize", handleResize);
+
+      const resizeObserver = new ResizeObserver(handleResize);
+      resizeObserver.observe(terminalHost);
+
       removeResizeListener = () => {
         window.removeEventListener("resize", handleResize);
+        resizeObserver.disconnect();
       };
 
       const cleanup = () => {
@@ -872,13 +1085,13 @@ export function TerminalPane({
 
   return (
     <div
-      className={`relative flex h-full w-full min-h-0 flex-1 flex-col overflow-hidden p-4 ${
+      className={`relative flex h-full w-full min-h-0 flex-1 flex-col overflow-hidden overscroll-none p-1 md:p-4 ${
         className ?? ""
       }`}
     >
       <div
         ref={setTerminalNode}
-        className="h-full min-h-0 w-full flex-1"
+        className="h-full min-h-0 w-full flex-1 touch-none overscroll-none"
         role="application"
         aria-label="Terminal"
         onMouseEnter={() => {
