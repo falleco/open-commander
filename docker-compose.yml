@@ -20,9 +20,10 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/commander_dev
       REDIS_HOSTNAME: redis
       DIND_CERTS_VOLUME: open-commander_open-commander-dind-certs
+      AGENT_STATE_PATH: ${AGENT_STATE_PATH:-}
       DOCKER_HOST: unix:///var/run/docker.sock
     volumes:
-      - ./.state:/home/commander/.state
+      - ${AGENT_STATE_PATH:-./.state}:/home/commander/.state
       - ./agents:/home/commander/agents
       - ${AGENT_WORKSPACE}:/workspace
       - /var/run/docker.sock:/var/run/docker.sock
@@ -57,10 +58,11 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/commander_dev
       REDIS_HOSTNAME: redis
       DIND_CERTS_VOLUME: open-commander_open-commander-dind-certs
+      AGENT_STATE_PATH: ${AGENT_STATE_PATH:-}
       DOCKER_HOST: unix:///var/run/docker.sock
     command: ["bun", "run", "--cwd", "/app/apps/web", "worker:all"]
     volumes:
-      - ./.state:/home/commander/.state
+      - ${AGENT_STATE_PATH:-./.state}:/home/commander/.state
       - ./agents:/home/commander/agents
       - ${AGENT_WORKSPACE}:/workspace
       - /var/run/docker.sock:/var/run/docker.sock
@@ -94,9 +96,10 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/commander_dev
       REDIS_HOSTNAME: redis
       BULL_BOARD_PORT: 4000
+      AGENT_STATE_PATH: ${AGENT_STATE_PATH:-}
     command: ["bun", "run", "--cwd", "/app/apps/web", "worker:board"]
     volumes:
-      - ./.state:/home/commander/.state
+      - ${AGENT_STATE_PATH:-./.state}:/home/commander/.state
       - ./agents:/home/commander/agents
       - ${AGENT_WORKSPACE}:/workspace
       - /var/run/docker.sock:/var/run/docker.sock

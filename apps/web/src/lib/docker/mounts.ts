@@ -1,6 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { env } from "@/env";
+import { agentStatePath } from "./state-path";
 import type { DockerMount } from "./docker.types";
 import { DockerMountMode } from "./docker.types";
 
@@ -35,11 +36,9 @@ export async function ensureAgentsConfig(basePath: string) {
  * Builds the standard agent mounts for a given user.
  */
 export async function buildAgentMounts(userId: string): Promise<DockerMount[]> {
-  const statePath = `${env.COMMANDER_BASE_PATH}/.state`;
+  const statePath = agentStatePath;
   const { claudeJson, claudeDir } = await ensureClaudeState(statePath, userId);
-  const { agentsConfig } = await ensureAgentsConfig(
-    `${env.COMMANDER_BASE_PATH}/agents`,
-  );
+  const { agentsConfig } = await ensureAgentsConfig(path.join(statePath, "agents"));
 
   return [
     { source: claudeJson, target: "/home/commander/.claude.json" },

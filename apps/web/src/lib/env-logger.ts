@@ -18,13 +18,13 @@ const logBooleanSetting = (
   console.log(`${indent}${statusIcon} ${description}`);
 };
 
-const _logSetting = (
-  value: string,
+const logSetting = (
+  value: string | undefined,
   description: string,
   indent = "|   ",
   icon = "➡️",
 ) => {
-  console.log(`${indent}${icon} ${description}: ${value}`);
+  console.log(`${indent}${icon} ${description}: ${value ?? "N/A"}`);
 };
 
 export function logEnvConfigStatus() {
@@ -37,6 +37,8 @@ export function logEnvConfigStatus() {
     "Artificial tRPC delay",
     "|_  ",
   );
+  logSetting(env.AGENT_STATE_PATH, "Agent state path", "|_  ");
+  logSetting(env.AGENT_WORKSPACE, "Agent workspace", "|_  ");
 
   // --- Auth ---
   console.log("\n🔑 Auth");

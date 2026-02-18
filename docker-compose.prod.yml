@@ -11,6 +11,7 @@ services:
       NODE_ENV: production
       COMMANDER_BASE_PATH: ${COMMANDER_BASE_PATH}
       AGENT_WORKSPACE: ${AGENT_WORKSPACE}
+      AGENT_STATE_PATH: ${AGENT_STATE_PATH:-}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
       NEXT_PUBLIC_UPLOADTHING_URL_ROOT: ${NEXT_PUBLIC_UPLOADTHING_URL_ROOT:-${NEXT_PUBLIC_APP_URL}}
       DATABASE_URL: ${DATABASE_URL}
@@ -19,7 +20,7 @@ services:
       DIND_CERTS_VOLUME: ${DIND_CERTS_VOLUME:-open-commander_open-commander-dind-certs}
       DOCKER_HOST: unix:///var/run/docker.sock
     volumes:
-      - ./.state:/home/commander/.state
+      - ${AGENT_STATE_PATH:-./.state}:/home/commander/.state
       - ./agents:/home/commander/agents
       - ${AGENT_WORKSPACE}:/workspace
       - /var/run/docker.sock:/var/run/docker.sock

@@ -31,8 +31,9 @@ export const env = createEnv({
       .url()
       .default("postgresql://postgres:postgres@localhost:5432/commander_dev"),
     AGENT_WORKSPACE: z.string().optional(),
+    AGENT_STATE_PATH: z.string().optional(),
     DIND_CERTS_VOLUME: z.string().optional(),
-    COMMANDER_BASE_PATH: z.string().default("."),
+    COMMANDER_BASE_PATH: z.string().optional(),
     REDIS_HOSTNAME: z.string().default("localhost"),
     REDIS_PORT: z.coerce.number().default(6379),
     REDIS_PASSWORD: z.string().optional(),
@@ -75,6 +76,7 @@ export const env = createEnv({
     TTYD_EGRESS_PROXY_PORT: process.env.TTYD_EGRESS_PROXY_PORT,
     EGRESS_PROXY_CONTAINER_NAME: process.env.EGRESS_PROXY_CONTAINER_NAME,
     AGENT_WORKSPACE: process.env.AGENT_WORKSPACE,
+    AGENT_STATE_PATH: process.env.AGENT_STATE_PATH,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_UPLOADTHING_URL_ROOT:
       process.env.NEXT_PUBLIC_UPLOADTHING_URL_ROOT,

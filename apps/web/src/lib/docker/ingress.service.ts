@@ -3,12 +3,12 @@ import path from "node:path";
 import { TRPCError } from "@trpc/server";
 import { env } from "@/env";
 import { normalizeContainerName } from "@/lib/utils";
+import { agentStatePath } from "./state-path";
 import { dockerService } from "./docker.service";
 import { DockerMountMode } from "./docker.types";
 
 const BASE_INGRESS_IMAGE = "nginx:alpine";
-const ingressStateDir = () =>
-  path.resolve(env.COMMANDER_BASE_PATH, ".state", "ingress");
+const ingressStateDir = () => path.join(agentStatePath, "ingress");
 
 const ingressConfigPath = (sessionId: string) => {
   const safeSessionId = normalizeContainerName(sessionId);
