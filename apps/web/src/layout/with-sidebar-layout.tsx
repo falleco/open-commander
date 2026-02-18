@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { AppNavbar } from "@/components/app-navbar";
 import { AppSidebar, AppSidebarProvider } from "@/components/app-sidebar";
@@ -7,7 +8,6 @@ import {
   CreateProjectModal,
   ProjectProvider,
   ProjectSessionsPanel,
-  ProjectTerminalView,
   useProject,
 } from "@/components/projects";
 import Squares from "@/components/squares";
@@ -34,14 +34,14 @@ function LayoutInner({
   const {
     createModalOpen,
     setCreateModalOpen,
-    selectedProjectId,
     selectedSessionId,
     setSelectedProjectId,
   } = useProject();
 
   usePresenceTracker(selectedSessionId);
 
-  const showInlineTerminal = Boolean(selectedProjectId && selectedSessionId);
+  const pathname = usePathname() ?? "";
+  const isTerminalPage = /^\/projects\/[^/]+\/sessions\/[^/]+/.test(pathname);
 
   return (
     <AppSidebarProvider>
@@ -54,12 +54,12 @@ function LayoutInner({
             <ProjectSessionsPanel />
             <main
               className={`relative flex min-h-0 flex-1 flex-col ${
-                showInlineTerminal
+                isTerminalPage
                   ? "gap-0 overflow-hidden p-0 md:gap-8 md:p-8"
                   : "gap-4 overflow-y-auto p-4 md:gap-8 md:p-8"
               }`}
             >
-              {showSquaresBackground && !showInlineTerminal && (
+              {showSquaresBackground && !isTerminalPage && (
                 <div className="absolute inset-0 z-0 overflow-hidden">
                   <div className="h-full w-full">
                     <Squares
@@ -72,7 +72,7 @@ function LayoutInner({
                   </div>
                 </div>
               )}
-              {showInlineTerminal ? <ProjectTerminalView /> : children}
+              {children}
             </main>
           </div>
         </div>

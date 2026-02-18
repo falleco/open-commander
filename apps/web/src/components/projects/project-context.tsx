@@ -1,18 +1,15 @@
 "use client";
 
+import { useParams, useRouter } from "next/navigation";
 import {
   createContext,
   type ReactNode,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
-
-const STORAGE_PROJECT_KEY = "open-commander.selected-project";
-const STORAGE_SESSION_KEY = "open-commander.project-session";
 
 type ProjectContextValue = {
   selectedProjectId: string | null;
@@ -37,49 +34,44 @@ type ProjectContextValue = {
 const ProjectContext = createContext<ProjectContextValue | null>(null);
 
 /**
- * Provides project selection state persisted in localStorage.
+ * Provides project/session selection state derived from URL params.
+ * Navigation is done via router.push so URLs are the source of truth.
  */
 export function ProjectProvider({ children }: { children: ReactNode }) {
-  const [selectedProjectId, setSelectedProjectIdRaw] = useState<string | null>(
-    null,
-  );
-  const [selectedSessionId, setSelectedSessionIdRaw] = useState<string | null>(
-    null,
-  );
+  const params = useParams();
+  const router = useRouter();
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
   const newSessionsRef = useRef(new Set<string>());
   const sessionBranchesRef = useRef(new Map<string, string>());
 
-  useEffect(() => {
-    const storedProject =
-      window.localStorage.getItem(STORAGE_PROJECT_KEY) || null;
-    const storedSession =
-      window.localStorage.getItem(STORAGE_SESSION_KEY) || null;
-    if (storedProject) setSelectedProjectIdRaw(storedProject);
-    if (storedSession) setSelectedSessionIdRaw(storedSession);
-    setHydrated(true);
-  }, []);
+  const selectedProjectId =
+    typeof params?.projectId === "string" ? params.projectId : null;
+  const selectedSessionId =
+    typeof params?.sessionId === "string" ? params.sessionId : null;
 
-  const setSelectedProjectId = useCallback((id: string | null) => {
-    setSelectedProjectIdRaw(id);
-    if (id) {
-      window.localStorage.setItem(STORAGE_PROJECT_KEY, id);
-    } else {
-      window.localStorage.removeItem(STORAGE_PROJECT_KEY);
-    }
-    setSelectedSessionIdRaw(null);
-    window.localStorage.removeItem(STORAGE_SESSION_KEY);
-  }, []);
+  const setSelectedProjectId = useCallback(
+    (id: string | null) => {
+      if (id) {
+        router.push(`/projects/${id}`);
+      } else {
+        router.push("/dashboard");
+      }
+    },
+    [router],
+  );
 
-  const setSelectedSessionId = useCallback((id: string | null) => {
-    setSelectedSessionIdRaw(id);
-    if (id) {
-      window.localStorage.setItem(STORAGE_SESSION_KEY, id);
-    } else {
-      window.localStorage.removeItem(STORAGE_SESSION_KEY);
-    }
-  }, []);
+  const setSelectedSessionId = useCallback(
+    (id: string | null) => {
+      if (id && selectedProjectId) {
+        router.push(`/projects/${selectedProjectId}/sessions/${id}`);
+      } else if (selectedProjectId) {
+        router.push(`/projects/${selectedProjectId}`);
+      } else {
+        router.push("/dashboard");
+      }
+    },
+    [router, selectedProjectId],
+  );
 
   const markSessionCreated = useCallback((sessionId: string) => {
     newSessionsRef.current.add(sessionId);
@@ -104,13 +96,13 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     return sessionBranchesRef.current.get(sessionId) ?? "";
   }, []);
 
-  const isPanelOpen = hydrated && selectedProjectId !== null;
+  const isPanelOpen = selectedProjectId !== null;
 
   const value = useMemo(
     () => ({
-      selectedProjectId: hydrated ? selectedProjectId : null,
+      selectedProjectId,
       setSelectedProjectId,
-      selectedSessionId: hydrated ? selectedSessionId : null,
+      selectedSessionId,
       setSelectedSessionId,
       isPanelOpen,
       createModalOpen,
@@ -122,7 +114,6 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       getSessionGitBranch,
     }),
     [
-      hydrated,
       selectedProjectId,
       setSelectedProjectId,
       selectedSessionId,

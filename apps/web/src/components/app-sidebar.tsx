@@ -3,6 +3,7 @@
 import {
   ChevronDown,
   Keyboard,
+  LayoutDashboard,
   Loader2,
   Menu,
   Plus,
@@ -10,7 +11,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   createContext,
   type ReactNode,
@@ -98,13 +99,12 @@ export function AppSidebarToggle({ className }: AppSidebarToggleProps) {
 
 export function AppSidebar() {
   const pathname = usePathname() ?? "/";
+  const router = useRouter();
   const { isMobileOpen, setMobileOpen } = useAppSidebarContext();
   const { openShortcuts } = useShortcuts();
   const {
     selectedProjectId,
-    setSelectedProjectId,
     selectedSessionId,
-    setSelectedSessionId,
     setCreateModalOpen,
     markSessionCreated,
     setSessionGitBranch,
@@ -112,7 +112,11 @@ export function AppSidebar() {
   const [mobileCreatePending, setMobileCreatePending] = useState(false);
   const [mobileDefaultName, setMobileDefaultName] = useState("");
   const utils = api.useUtils();
-  const activePage = pathname.startsWith("/settings") ? "settings" : null;
+  const activePage = pathname.startsWith("/settings")
+    ? "settings"
+    : pathname === "/dashboard" || pathname === "/"
+      ? "dashboard"
+      : null;
 
   const projectsQuery = api.project.list.useQuery();
   const projects = projectsQuery.data ?? [];
@@ -137,12 +141,12 @@ export function AppSidebar() {
   const mobilePresences = mobilePresenceQuery.data ?? [];
 
   const createSessionMutation = api.project.createSession.useMutation({
-    onSuccess: (session) => {
+    onSuccess: (session, variables) => {
       void utils.project.listSessions.invalidate({
-        projectId: expandedProjectId ?? "",
+        projectId: variables.projectId,
       });
       markSessionCreated(session.id);
-      setSelectedSessionId(session.id);
+      router.push(`/projects/${variables.projectId}/sessions/${session.id}`);
       setMobileOpen(false);
     },
   });
@@ -169,20 +173,11 @@ export function AppSidebar() {
     [expandedProjectId, createSessionMutation, setSessionGitBranch],
   );
 
-  const handleProjectClick = (projectId: string) => {
-    if (selectedProjectId === projectId) {
-      setSelectedProjectId(null);
-    } else {
-      setSelectedProjectId(projectId);
-    }
-  };
-
   const handleMobileProjectClick = (projectId: string) => {
     if (expandedProjectId === projectId) {
       setExpandedProjectId(null);
     } else {
       setExpandedProjectId(projectId);
-      setSelectedProjectId(projectId);
     }
   };
 
@@ -218,7 +213,7 @@ export function AppSidebar() {
           <div>
             <div className="flex items-center justify-between">
               <span className="text-xs uppercase tracking-[0.3em] text-slate-400">
-                Projects
+                Menu
               </span>
               <button
                 type="button"
@@ -230,7 +225,30 @@ export function AppSidebar() {
               </button>
             </div>
 
+            {/* Dashboard link */}
             <div className="mt-4 flex flex-col gap-1">
+              <Link
+                href="/dashboard"
+                className={`${mobileLinkBase} w-full text-left ${
+                  activePage === "dashboard"
+                    ? "bg-purple-500/25 text-purple-200"
+                    : ""
+                }`}
+                onClick={() => setMobileOpen(false)}
+              >
+                <LayoutDashboard aria-hidden="true" {...iconProps} />
+                Dashboard
+              </Link>
+            </div>
+
+            {/* Projects header */}
+            <div className="mt-6 mb-2">
+              <span className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                Projects
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-1">
               {projects.length === 0 ? (
                 <p className="px-3 py-4 text-xs text-slate-500">
                   No projects yet.
@@ -303,7 +321,9 @@ export function AppSidebar() {
                                 isLastChild,
                                 connectorColumns,
                               } = node;
-                              const isActive = session.id === selectedSessionId;
+                              const isActive =
+                                selectedProjectId === project.id &&
+                                session.id === selectedSessionId;
                               const dotColor =
                                 session.status === "running"
                                   ? "bg-emerald-400"
@@ -398,7 +418,9 @@ export function AppSidebar() {
                                         : "text-slate-300 hover:bg-white/5 hover:text-slate-100"
                                     }`}
                                     onClick={() => {
-                                      setSelectedSessionId(session.id);
+                                      router.push(
+                                        `/projects/${project.id}/sessions/${session.id}`,
+                                      );
                                       setMobileOpen(false);
                                     }}
                                   >
@@ -465,15 +487,34 @@ export function AppSidebar() {
       </div>
 
       {/* Desktop sidebar */}
-      <aside className="hidden w-16 flex-col items-center justify-between border-r border-purple-500/25 bg-(--oc-panel) px-1.5 py-6 md:flex">
+      <aside className="hidden w-16 flex-col items-center justify-between border-r border-purple-500/25 bg-(--oc-panel) px-1.5 py-4 md:flex">
         <TooltipProvider delayDuration={300}>
           <div className="flex flex-col items-center gap-3">
+            {/* Dashboard icon — first item */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href="/dashboard"
+                  className={linkClass(activePage === "dashboard")}
+                  aria-label="Dashboard"
+                  aria-current={activePage === "dashboard" ? "page" : undefined}
+                >
+                  <LayoutDashboard aria-hidden="true" {...iconProps} />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">Dashboard</TooltipContent>
+            </Tooltip>
+
+            {/* Separator */}
+            <div className="h-px w-8 bg-purple-500/25" />
+
+            {/* Project icons */}
             {projects.map((project: { id: string; name: string }) => (
               <ProjectIcon
                 key={project.id}
                 name={project.name}
                 isActive={selectedProjectId === project.id}
-                onClick={() => handleProjectClick(project.id)}
+                href={`/projects/${project.id}`}
               />
             ))}
             <Tooltip>

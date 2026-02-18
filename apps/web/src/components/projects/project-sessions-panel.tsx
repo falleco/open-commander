@@ -11,6 +11,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { modKey, useShortcuts } from "@/components/shortcuts/shortcuts-context";
 import {
@@ -608,12 +609,9 @@ export function ProjectSessionsPanel() {
                       />
                     </span>
                   )}
-                  <button
-                    type="button"
-                    className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left py-3"
-                    onClick={() => {
-                      setSelectedSessionId(session.id);
-                    }}
+                  <Link
+                    href={`/projects/${selectedProjectId}/sessions/${session.id}`}
+                    className="flex min-w-0 flex-1 items-center gap-2 text-left py-3"
                   >
                     <span
                       className={`relative z-10 h-2 w-2 shrink-0 rounded-full ${statusColor(session.status)}`}
@@ -626,7 +624,7 @@ export function ProjectSessionsPanel() {
                         presences={presences}
                       />
                     </span>
-                  </button>
+                  </Link>
                   <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover:opacity-100">
                     {env.NEXT_PUBLIC_GIT_BUTLER_ENABLED && (
                       <button

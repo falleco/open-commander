@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   Tooltip,
   TooltipContent,
@@ -9,12 +10,12 @@ import {
 type ProjectIconProps = {
   name: string;
   isActive: boolean;
-  onClick: () => void;
+  href: string;
 };
 
 /**
  * Extracts up to 2 initials from a project name.
- * "My App" → "MA", "backend" → "BA"
+ * "My App" -> "MA", "backend" -> "BA"
  */
 function getInitials(name: string): string {
   const words = name.trim().split(/\s+/);
@@ -25,24 +26,23 @@ function getInitials(name: string): string {
 }
 
 /**
- * Sidebar icon for a project. Shows 2-letter initials with active highlight.
+ * Sidebar icon for a project. Renders as a Link for proper URL navigation.
  */
-export function ProjectIcon({ name, isActive, onClick }: ProjectIconProps) {
+export function ProjectIcon({ name, isActive, href }: ProjectIconProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <button
-          type="button"
-          className={`flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg text-xs font-bold tracking-wide transition-colors ${
+        <Link
+          href={href}
+          className={`flex h-11 w-11 items-center justify-center rounded-lg text-xs font-bold tracking-wide transition-colors ${
             isActive
               ? "bg-emerald-400/20 text-emerald-300 ring-2 ring-emerald-400/40"
               : "bg-white/10 text-slate-300 hover:bg-purple-500/15 hover:text-purple-300"
           }`}
-          onClick={onClick}
           aria-label={name}
         >
           {getInitials(name)}
-        </button>
+        </Link>
       </TooltipTrigger>
       <TooltipContent side="right">{name}</TooltipContent>
     </Tooltip>
