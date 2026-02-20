@@ -685,8 +685,7 @@ export function TerminalPane({
       });
       log(`startSession: backend ok ${JSON.stringify(data)}`);
       const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-      const host = window.location.hostname;
-      const nextWsUrl = `${protocol}://${host}:${data.port}${data.wsPath}`;
+      const nextWsUrl = `${protocol}://${window.location.host}/terminal/${sessionId}`;
       log(`ws: url ${nextWsUrl}`);
 
       onContainerName(data.containerName);

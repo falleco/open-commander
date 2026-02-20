@@ -28,5 +28,8 @@ export async function register() {
 
   if (process.env.NEXT_RUNTIME === "nodejs") {
     logEnvConfigStatus();
+    const { start } = await import("@/server/proxy");
+    start().catch((err) => console.error("[proxy] failed to start:", err));
+    console.log("🟢 Proxy started");
   }
 }

@@ -81,21 +81,8 @@ export type StopSessionResult = {
 };
 
 export type StartSessionResult = {
-  port: number;
-  wsPath: string;
   containerName: string;
 };
-
-async function prepareIngressContainer(
-  sessionId: string,
-  targetContainer: string,
-) {
-  const { ingressContainer } = sessionContainerNames(sessionId);
-  const configPath = await ingressService.setup(sessionId, targetContainer);
-  await ingressService.run(ingressContainer, configPath);
-  await ingressService.connect(ingressContainer);
-  return ingressContainer;
-}
 
 export const sessionService = {
   async start(
@@ -113,8 +100,6 @@ export const sessionService = {
     });
     if (existingSession) {
       return {
-        port: existingSession.port as number,
-        wsPath: existingSession.wsPath as string,
         containerName: existingSession.containerName as string,
       };
     }
@@ -242,49 +227,15 @@ export const sessionService = {
       }
     }
 
-    const ingressContainerName = await prepareIngressContainer(
-      sessionId,
-      agentContainer,
-    );
-    let resolvedPort = await dockerService.getPortWithRetries(
-      ingressContainerName,
-      PORT,
-    );
-    if (!resolvedPort) {
-      await dockerService.safeRemove(ingressContainerName);
-      const rebuiltIngressName = await prepareIngressContainer(
-        sessionId,
-        agentContainer,
-      );
-      resolvedPort = await dockerService.getPortWithRetries(
-        rebuiltIngressName,
-        PORT,
-      );
-    }
-    if (!resolvedPort) {
-      const ingressRunning =
-        await dockerService.isRunning(ingressContainerName);
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: `Porta do container não encontrada (ingress=${ingressContainerName}, running=${ingressRunning ?? "null"}).`,
-      });
-    }
-
     await db.terminalSession.update({
       where: { id: sessionId, userId },
       data: {
-        port: resolvedPort,
-        wsPath: "/ws",
         containerName: agentContainer,
         status: "running",
       },
     });
 
-    return {
-      port: resolvedPort,
-      wsPath: "/ws",
-      containerName: agentContainer,
-    };
+    return { containerName: agentContainer };
   },
 
   async stop(sessionId: string): Promise<StopSessionResult> {
