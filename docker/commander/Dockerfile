@@ -12,6 +12,7 @@ COPY --from=docker-cli /usr/local/libexec/docker/cli-plugins /usr/local/libexec/
 FROM base AS deps
 COPY package.json bun.lock ./
 COPY apps/web/package.json apps/web/package.json
+COPY apps/web/prisma apps/web/prisma
 COPY packages packages
 RUN bun install --frozen-lockfile
 
@@ -33,6 +34,7 @@ WORKDIR /app
 COPY --from=build /app/apps/web/.next/standalone ./
 COPY --from=build /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=build /app/apps/web/public ./apps/web/public
+COPY --from=build /app/apps/web/prisma ./apps/web/prisma
 
 EXPOSE 3000
 CMD ["sh", "-c", "if [ -f /app/server.js ]; then bun /app/server.js; else bun /app/apps/web/server.js; fi"]

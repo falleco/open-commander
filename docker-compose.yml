@@ -14,18 +14,20 @@ services:
     env_file:
       - ./apps/web/.env
     environment:
+      HOST: 0.0.0.0
       NODE_ENV: development
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       NEXT_PUBLIC_UPLOADTHING_URL_ROOT: http://localhost:3000
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/commander_dev
       REDIS_HOSTNAME: redis
       DIND_CERTS_VOLUME: open-commander_open-commander-dind-certs
-      AGENT_STATE_PATH: ${AGENT_STATE_PATH:-}
+      AGENT_STATE_PATH: ${AGENT_STATE_PATH:-/home/commander/.state}
+      AGENT_WORKSPACE: ${AGENT_WORKSPACE:-/workspace}
       DOCKER_HOST: unix:///var/run/docker.sock
     volumes:
-      - ${AGENT_STATE_PATH:-./.state}:/home/commander/.state
-      - ./agents:/home/commander/agents
-      - ${AGENT_WORKSPACE}:/workspace
+      - ${DOCKER_AGENT_STATE_PATH}:/root/.state
+      - ${DOCKER_AGENT_WORKSPACE}:/workspace
+      - ./agents:/root/agents
       - /var/run/docker.sock:/var/run/docker.sock
     links:
       - postgres:postgres.local
@@ -44,69 +46,69 @@ services:
   ########################
   #   Worker: All Jobs   #
   ########################
-  worker-jobs:
-    image: opencommander/web
-    build:
-      context: .
-      dockerfile: docker/commander/Dockerfile
-      target: dev
-    container_name: open-commander-worker-jobs
-    env_file:
-      - ./apps/web/.env
-    environment:
-      NODE_ENV: development
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/commander_dev
-      REDIS_HOSTNAME: redis
-      DIND_CERTS_VOLUME: open-commander_open-commander-dind-certs
-      AGENT_STATE_PATH: ${AGENT_STATE_PATH:-}
-      DOCKER_HOST: unix:///var/run/docker.sock
-    command: ["bun", "run", "--cwd", "/app/apps/web", "worker:all"]
-    volumes:
-      - ${AGENT_STATE_PATH:-./.state}:/home/commander/.state
-      - ./agents:/home/commander/agents
-      - ${AGENT_WORKSPACE}:/workspace
-      - /var/run/docker.sock:/var/run/docker.sock
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      egress-proxy:
-        condition: service_started
-      docker-dind:
-        condition: service_started
-    restart: unless-stopped
+  # worker-jobs:
+  #   image: opencommander/web
+  #   build:
+  #     context: .
+  #     dockerfile: docker/commander/Dockerfile
+  #     target: dev
+  #   container_name: open-commander-worker-jobs
+  #   env_file:
+  #     - ./apps/web/.env
+  #   environment:
+  #     NODE_ENV: development
+  #     DATABASE_URL: postgresql://postgres:postgres@postgres:5432/commander_dev
+  #     REDIS_HOSTNAME: redis
+  #     DIND_CERTS_VOLUME: open-commander_open-commander-dind-certs
+  #     AGENT_STATE_PATH: ${AGENT_STATE_PATH:-}
+  #     DOCKER_HOST: unix:///var/run/docker.sock
+  #   command: ["bun", "run", "--cwd", "/app/apps/web", "worker:all"]
+  #   volumes:
+  #     - ${AGENT_STATE_PATH:-./.state}:/home/commander/.state
+  #     - ./agents:/home/commander/agents
+  #     - ${AGENT_WORKSPACE}:/workspace
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     egress-proxy:
+  #       condition: service_started
+  #     docker-dind:
+  #       condition: service_started
+  #   restart: unless-stopped
 
   ########################
   #  Worker: Bull Board  #
   ########################
-  worker-board:
-    image: opencommander/web
-    build:
-      context: .
-      dockerfile: docker/commander/Dockerfile
-      target: dev
-    container_name: open-commander-worker-board
-    ports:
-      - "4000:4000"
-    env_file:
-      - ./apps/web/.env
-    environment:
-      NODE_ENV: development
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/commander_dev
-      REDIS_HOSTNAME: redis
-      BULL_BOARD_PORT: 4000
-      AGENT_STATE_PATH: ${AGENT_STATE_PATH:-}
-    command: ["bun", "run", "--cwd", "/app/apps/web", "worker:board"]
-    volumes:
-      - ${AGENT_STATE_PATH:-./.state}:/home/commander/.state
-      - ./agents:/home/commander/agents
-      - ${AGENT_WORKSPACE}:/workspace
-      - /var/run/docker.sock:/var/run/docker.sock
-    depends_on:
-      redis:
-        condition: service_healthy
-    restart: unless-stopped
+  # worker-board:
+  #   image: opencommander/web
+  #   build:
+  #     context: .
+  #     dockerfile: docker/commander/Dockerfile
+  #     target: dev
+  #   container_name: open-commander-worker-board
+  #   ports:
+  #     - "4000:4000"
+  #   env_file:
+  #     - ./apps/web/.env
+  #   environment:
+  #     NODE_ENV: development
+  #     DATABASE_URL: postgresql://postgres:postgres@postgres:5432/commander_dev
+  #     REDIS_HOSTNAME: redis
+  #     BULL_BOARD_PORT: 4000
+  #     AGENT_STATE_PATH: ${AGENT_STATE_PATH:-}
+  #   command: ["bun", "run", "--cwd", "/app/apps/web", "worker:board"]
+  #   volumes:
+  #     - ${AGENT_STATE_PATH:-./.state}:/home/commander/.state
+  #     - ./agents:/home/commander/agents
+  #     - ${AGENT_WORKSPACE}:/workspace
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy
+  #   restart: unless-stopped
 
   ################
   # Egress Proxy #
@@ -161,6 +163,9 @@ services:
         aliases:
           - docker
     volumes:
+      - ${DOCKER_AGENT_STATE_PATH}:/root/.state
+      - ${DOCKER_AGENT_WORKSPACE}:/workspace
+      - ./agents:/root/agents
       - open-commander-dind-data:/var/lib/docker
       - open-commander-dind-certs:/certs
       - /tmp
