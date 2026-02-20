@@ -6,6 +6,7 @@ import { portProxyService } from "@/lib/docker/port-proxy.service";
 import { sessionService } from "@/lib/docker/session.service";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import type { db as dbClient } from "@/server/db";
+import { notifySessionChange } from "@/server/session-broadcaster";
 
 const projectIdSchema = z.string().min(1);
 const projectNameSchema = z.string().trim().min(1).max(80);
@@ -157,7 +158,7 @@ export const projectRouter = createTRPCRouter({
         input.projectId,
         ctx.session.user.id,
       );
-      return ctx.db.terminalSession.create({
+      const session = await ctx.db.terminalSession.create({
         data: {
           name: input.name,
           user: { connect: { id: ctx.session.user.id } },
@@ -165,6 +166,8 @@ export const projectRouter = createTRPCRouter({
           status: "pending",
         },
       });
+      notifySessionChange(input.projectId);
+      return session;
     }),
 
   forkSession: protectedProcedure
@@ -194,7 +197,7 @@ export const projectRouter = createTRPCRouter({
           message: "Parent session not found.",
         });
       }
-      return ctx.db.terminalSession.create({
+      const session = await ctx.db.terminalSession.create({
         data: {
           name: input.name ?? `${parent.name} (fork)`,
           user: { connect: { id: ctx.session.user.id } },
@@ -204,6 +207,8 @@ export const projectRouter = createTRPCRouter({
           status: "pending",
         },
       });
+      notifySessionChange(input.projectId);
+      return session;
     }),
 
   stackSession: protectedProcedure
@@ -233,7 +238,7 @@ export const projectRouter = createTRPCRouter({
           message: "Parent session not found.",
         });
       }
-      return ctx.db.terminalSession.create({
+      const session = await ctx.db.terminalSession.create({
         data: {
           name: input.name ?? `${parent.name} (stack)`,
           user: { connect: { id: ctx.session.user.id } },
@@ -243,6 +248,8 @@ export const projectRouter = createTRPCRouter({
           status: "pending",
         },
       });
+      notifySessionChange(input.projectId);
+      return session;
     }),
 
   toggleShare: protectedProcedure
@@ -280,9 +287,11 @@ export const projectRouter = createTRPCRouter({
         });
       }
 
-      return ctx.db.project.update({
+      const updated = await ctx.db.project.update({
         where: { id: input.id },
         data: { shared: input.shared },
       });
+      notifySessionChange(input.id);
+      return updated;
     }),
 });

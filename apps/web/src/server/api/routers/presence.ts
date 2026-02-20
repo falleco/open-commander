@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { notifyPresenceChange } from "@/server/presence-broadcaster";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 
 const STALE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
@@ -22,8 +23,7 @@ export const presenceRouter = createTRPCRouter({
       const now = new Date();
       const staleThreshold = new Date(now.getTime() - STALE_THRESHOLD_MS);
 
-      // Clean stale records, then upsert in parallel
-      await Promise.all([
+      const [, , session] = await Promise.all([
         ctx.db.sessionPresence.deleteMany({
           where: { lastSeen: { lt: staleThreshold } },
         }),
@@ -41,7 +41,15 @@ export const presenceRouter = createTRPCRouter({
             lastSeen: now,
           },
         }),
+        ctx.db.terminalSession.findUnique({
+          where: { id: input.sessionId },
+          select: { projectId: true },
+        }),
       ]);
+
+      if (session?.projectId) {
+        notifyPresenceChange(session.projectId);
+      }
 
       return { ok: true };
     }),
@@ -78,11 +86,22 @@ export const presenceRouter = createTRPCRouter({
 
   /** Delete the caller's presence record (best-effort cleanup). */
   leave: protectedProcedure.mutation(async ({ ctx }) => {
+    const presence = await ctx.db.sessionPresence
+      .findUnique({
+        where: { userId: ctx.session.user.id },
+        select: { session: { select: { projectId: true } } },
+      })
+      .catch(() => null);
+
     await ctx.db.sessionPresence
       .delete({ where: { userId: ctx.session.user.id } })
       .catch(() => {
         // Record may not exist — that's fine
       });
+
+    if (presence?.session?.projectId) {
+      notifyPresenceChange(presence.session.projectId);
+    }
 
     return { ok: true };
   }),

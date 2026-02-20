@@ -683,6 +683,14 @@ export function TerminalPane({
         workspaceSuffix,
         gitBranch: gitBranch || undefined,
       });
+      // Abort immediately if a newer startSession call has already taken over.
+      // Without this check the stale call would close the live socket established
+      // by the newer call (race in React strict-mode double-invocation or rapid
+      // session switches).
+      if (connectionIdRef.current !== connectionId) {
+        log(`startSession: stale after mutation id=${connectionId}, discarding`);
+        return;
+      }
       log(`startSession: backend ok ${JSON.stringify(data)}`);
       const protocol = window.location.protocol === "https:" ? "wss" : "ws";
       const nextWsUrl = `${protocol}://${window.location.host}/terminal/${sessionId}`;

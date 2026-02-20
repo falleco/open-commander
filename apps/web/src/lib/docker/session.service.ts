@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { env } from "@/env";
 import { escapeShellArg, sessionContainerNames } from "@/lib/utils";
 import { db } from "@/server/db";
+import { notifySessionChange } from "@/server/session-broadcaster";
 import { dockerService } from "./docker.service";
 import { ingressService } from "./ingress.service";
 import { buildAgentMounts } from "./mounts";
@@ -95,13 +96,17 @@ export const sessionService = {
     },
   ): Promise<StartSessionResult> {
     const reset = options?.reset ?? false;
-    const existingSession = await db.terminalSession.findUnique({
-      where: { id: sessionId, userId, status: { in: ["starting", "running"] } },
-    });
-    if (existingSession) {
-      return {
-        containerName: existingSession.containerName as string,
-      };
+    // Short-circuit only when the session is already running and no reset was
+    // requested. When reset=true we fall through so dockerService.restart runs.
+    if (!reset) {
+      const existingSession = await db.terminalSession.findUnique({
+        where: { id: sessionId, userId, status: { in: ["starting", "running"] } },
+      });
+      if (existingSession) {
+        return {
+          containerName: existingSession.containerName as string,
+        };
+      }
     }
 
     const session = await db.terminalSession.findUnique({
@@ -227,13 +232,14 @@ export const sessionService = {
       }
     }
 
-    await db.terminalSession.update({
+    const updated = await db.terminalSession.update({
       where: { id: sessionId, userId },
       data: {
         containerName: agentContainer,
         status: "running",
       },
     });
+    if (updated.projectId) notifySessionChange(updated.projectId);
 
     return { containerName: agentContainer };
   },

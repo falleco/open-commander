@@ -33,6 +33,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { env } from "@/env";
+import { usePresenceWebSocket } from "@/hooks/use-presence-websocket";
+import { useSessionsWebSocket } from "@/hooks/use-sessions-websocket";
 import { randomSessionName } from "@/lib/random-session-name";
 import { buildSessionTree } from "@/lib/session-tree";
 import { api } from "@/trpc/react";
@@ -127,19 +129,18 @@ export function AppSidebar() {
     null,
   );
 
-  const sessionsQuery = api.project.listSessions.useQuery(
-    { projectId: expandedProjectId ?? "" },
-    { enabled: Boolean(expandedProjectId), refetchInterval: 5000 },
+  const [mobileSessions] = useSessionsWebSocket(
+    expandedProjectId,
+    Boolean(expandedProjectId),
   );
-  const mobileSessions = sessionsQuery.data ?? [];
 
   const mobilePresenceEnabled =
     !env.NEXT_PUBLIC_DISABLE_AUTH && Boolean(expandedProjectId);
-  const mobilePresenceQuery = api.presence.listByProject.useQuery(
-    { projectId: expandedProjectId ?? "" },
-    { enabled: mobilePresenceEnabled, refetchInterval: 5000 },
+  const mobilePresences = usePresenceWebSocket(
+    expandedProjectId,
+    null,
+    mobilePresenceEnabled,
   );
-  const mobilePresences = mobilePresenceQuery.data ?? [];
 
   const createSessionMutation = api.project.createSession.useMutation({
     onSuccess: (session, variables) => {
@@ -318,16 +319,7 @@ export function AppSidebar() {
                               Create Session
                             </button>
 
-                            {sessionsQuery.isLoading ? (
-                              <div className="flex items-center gap-2 px-3 py-2 text-xs text-slate-500">
-                                <Loader2
-                                  className="h-3 w-3 animate-spin"
-                                  aria-hidden
-                                />
-                                Loading…
-                              </div>
-                            ) : (
-                              buildSessionTree(mobileSessions).map((node) => {
+                            {buildSessionTree(mobileSessions).map((node) => {
                                 const {
                                   session,
                                   depth,
@@ -455,7 +447,7 @@ export function AppSidebar() {
                                   </div>
                                 );
                               })
-                            )}
+                            }
                           </div>
                         )}
                       </div>

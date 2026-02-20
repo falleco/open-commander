@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type PresenceEntry = {
@@ -50,8 +50,11 @@ export function SessionPresenceAvatars({
   const leaveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Detect entering/leaving by comparing previous vs current user sets.
+  // useLayoutEffect (no deps = every render) runs synchronously before paint,
+  // so setAnims and the resulting re-render are batched into the same paint
+  // cycle — the avatar is never briefly invisible before the leave animation.
   // Skips the very first render (prevMapRef is null) so mount doesn't animate.
-  useEffect(() => {
+  useLayoutEffect(() => {
     const prev = prevMapRef.current;
     prevMapRef.current = currentMap;
 

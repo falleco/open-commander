@@ -23,6 +23,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { env } from "@/env";
+import { usePresenceWebSocket } from "@/hooks/use-presence-websocket";
+import { useSessionsWebSocket } from "@/hooks/use-sessions-websocket";
 import { randomSessionName } from "@/lib/random-session-name";
 import { buildSessionTree } from "@/lib/session-tree";
 import { api } from "@/trpc/react";
@@ -78,22 +80,11 @@ export function ProjectSessionsPanel() {
 
   const isOwner = project?.userId === currentUserId;
 
-  const sessionsQuery = api.project.listSessions.useQuery(
-    { projectId: selectedProjectId ?? "" },
-    {
-      enabled: Boolean(selectedProjectId),
-      refetchInterval: 5000,
-    },
-  );
-  const sessions = sessionsQuery.data ?? [];
+  const [sessions, addSession] = useSessionsWebSocket(selectedProjectId, isPanelOpen);
 
   const presenceEnabled =
     !env.NEXT_PUBLIC_DISABLE_AUTH && Boolean(selectedProjectId) && isPanelOpen;
-  const presenceQuery = api.presence.listByProject.useQuery(
-    { projectId: selectedProjectId ?? "" },
-    { enabled: presenceEnabled, refetchInterval: 5000 },
-  );
-  const presences = presenceQuery.data ?? [];
+  const presences = usePresenceWebSocket(selectedProjectId, null, presenceEnabled);
 
   const createSessionMutation = api.project.createSession.useMutation({
     onSuccess: (session) => {
@@ -101,6 +92,11 @@ export function ProjectSessionsPanel() {
         projectId: selectedProjectId ?? "",
       });
       void utils.terminal.ingressStatus.invalidate();
+      addSession({
+        ...session,
+        relationType: session.relationType as "fork" | "stack" | null,
+        user: { id: currentUserId ?? session.userId, name: null },
+      });
       markSessionCreated(session.id);
       setSelectedSessionId(session.id);
     },
@@ -112,6 +108,11 @@ export function ProjectSessionsPanel() {
         projectId: selectedProjectId ?? "",
       });
       void utils.terminal.ingressStatus.invalidate();
+      addSession({
+        ...session,
+        relationType: session.relationType as "fork" | "stack" | null,
+        user: { id: currentUserId ?? session.userId, name: null },
+      });
       markSessionCreated(session.id);
       setSelectedSessionId(session.id);
     },
@@ -123,6 +124,11 @@ export function ProjectSessionsPanel() {
         projectId: selectedProjectId ?? "",
       });
       void utils.terminal.ingressStatus.invalidate();
+      addSession({
+        ...session,
+        relationType: session.relationType as "fork" | "stack" | null,
+        user: { id: currentUserId ?? session.userId, name: null },
+      });
       markSessionCreated(session.id);
       setSelectedSessionId(session.id);
     },
@@ -564,13 +570,7 @@ export function ProjectSessionsPanel() {
             Create Session
           </button>
 
-          {sessionsQuery.isLoading ? (
-            <div className="flex items-center gap-2 px-2 py-4 text-xs text-slate-500">
-              <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
-              Loading...
-            </div>
-          ) : (
-            buildSessionTree(sessions).map((node) => {
+          {buildSessionTree(sessions).map((node) => {
               const {
                 session,
                 depth,
@@ -735,8 +735,8 @@ export function ProjectSessionsPanel() {
                   </div>
                 </div>
               );
-            })
-          )}
+            })}
+
         </div>
       </div>
     </>
@@ -761,7 +761,7 @@ export function ProjectSessionsPanel() {
             className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-slate-200 transition hover:bg-white/10"
             onClick={() => {
               const s = sessions.find((s) => s.id === sessionMenu.id);
-              if (s) handleRename(s.id, s.name);
+              if (s) handleRename(s.id, s.name ?? "");
             }}
           >
             <Pencil className="h-3.5 w-3.5" strokeWidth={1.6} aria-hidden />

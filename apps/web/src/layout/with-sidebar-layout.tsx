@@ -11,7 +11,8 @@ import {
   useProject,
 } from "@/components/projects";
 import Squares from "@/components/squares";
-import { usePresenceTracker } from "@/hooks/use-presence-tracker";
+import { env } from "@/env";
+import { usePresenceWebSocket } from "@/hooks/use-presence-websocket";
 import type { AuthUserType } from "@/server/auth";
 
 type WithSidebarLayoutProps = {
@@ -34,11 +35,16 @@ function LayoutInner({
   const {
     createModalOpen,
     setCreateModalOpen,
+    selectedProjectId,
     selectedSessionId,
     setSelectedProjectId,
   } = useProject();
 
-  usePresenceTracker(selectedSessionId);
+  usePresenceWebSocket(
+    selectedProjectId,
+    selectedSessionId,
+    !env.NEXT_PUBLIC_DISABLE_AUTH && Boolean(selectedProjectId),
+  );
 
   const pathname = usePathname() ?? "";
   const isTerminalPage = /^\/projects\/[^/]+\/sessions\/[^/]+/.test(pathname);

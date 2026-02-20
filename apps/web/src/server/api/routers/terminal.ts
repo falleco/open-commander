@@ -12,6 +12,7 @@ import { sessionService } from "@/lib/docker/session.service";
 import { sessionContainerNames } from "@/lib/utils";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { db } from "@/server/db";
+import { notifySessionChange } from "@/server/session-broadcaster";
 
 const execAsync = promisify(execFile);
 
@@ -254,10 +255,12 @@ export const terminalRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       await ensureMySession(input.id, ctx.session.user.id);
-      return ctx.db.terminalSession.update({
+      const updated = await ctx.db.terminalSession.update({
         where: { id: input.id, userId: ctx.session.user.id },
         data: { name: input.name },
       });
+      if (updated.projectId) notifySessionChange(updated.projectId);
+      return updated;
     }),
   startSession: protectedProcedure
     .input(
@@ -288,6 +291,10 @@ export const terminalRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       await ensureMySession(input.id, ctx.session.user.id);
+      const sessionInfo = await ctx.db.terminalSession.findUnique({
+        where: { id: input.id },
+        select: { projectId: true },
+      });
 
       // Collect all descendant sessions recursively
       const descendants: string[] = [];
@@ -324,6 +331,7 @@ export const terminalRouter = createTRPCRouter({
         data: { status: "stopped" },
       });
       await portProxyService.removeAll(input.id);
+      if (sessionInfo?.projectId) notifySessionChange(sessionInfo.projectId);
       return stopResult;
     }),
 

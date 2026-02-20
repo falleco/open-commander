@@ -7,9 +7,17 @@ import { env } from "@/env";
 import { normalizeContainerName } from "@/lib/utils";
 import { db } from "@/server/db";
 import { auth } from "@/server/auth";
+import type { TerminalSessionStatus } from "@/generated/prisma";
+import { onPresenceChange } from "@/server/presence-broadcaster";
+import { onSessionChange } from "@/server/session-broadcaster";
 
 const PORT = Number(process.env.PROXY_PORT ?? 7682);
 const DISABLE_AUTH = process.env.NEXT_PUBLIC_DISABLE_AUTH === "true";
+
+/** Maximum allowed length for sessionId / projectId path parameters. */
+const MAX_ID_LEN = 128;
+/** Maximum number of messages buffered from the client before upstream is ready. */
+const MAX_CLIENT_BUFFER = 64;
 
 /**
  * Resolves the userId from the better-auth session cookie by delegating to
@@ -43,6 +51,21 @@ async function resolveTerminalAccess(
     select: { containerName: true },
   });
   return session?.containerName ?? null;
+}
+
+/**
+ * Returns true if the user owns the project or the project is shared.
+ * Used to gate presence and sessions WebSocket subscriptions.
+ */
+async function resolveProjectAccess(
+  projectId: string,
+  userId: string,
+): Promise<boolean> {
+  const project = await db.project.findFirst({
+    where: { id: projectId, OR: [{ userId }, { shared: true }] },
+    select: { id: true },
+  });
+  return project !== null;
 }
 
 /**
@@ -179,8 +202,14 @@ async function connectToContainerWs(
   );
 }
 
+function log(level: "info" | "warn" | "error", msg: string) {
+  const mark = level === "error" ? "✗" : level === "warn" ? "⚠" : "○";
+  const out = level === "error" ? console.error : level === "warn" ? console.warn : console.log;
+  out(` ${mark} proxy  ${msg}`);
+}
+
 export async function start() {
-  const server = Fastify({ logger: { level: "info" } });
+  const server = Fastify({ logger: false });
 
   await server.register(websocketPlugin);
 
@@ -201,8 +230,12 @@ export async function start() {
     { websocket: true },
     async (socket, request) => {
       const { sessionId } = request.params as { sessionId: string };
-      server.log.info({ sessionId }, "[proxy] ws handler entered");
-      server.log.info({ sessionId, cookie: request.headers.cookie }, "[proxy] raw cookie header");
+
+      // --- Input validation ---
+      if (!sessionId || sessionId.length > MAX_ID_LEN) {
+        socket.close(1008, "Invalid request");
+        return;
+      }
 
       // --- Auth ---
       let userId: string | null;
@@ -212,20 +245,17 @@ export async function start() {
         userId = await getUserIdFromCookies(request.headers.cookie);
       }
 
-      server.log.info({ sessionId, userId, disableAuth: DISABLE_AUTH }, "[proxy] auth result");
-
       if (!userId) {
-        server.log.warn({ sessionId }, "[proxy] closing: unauthorized");
+        log("warn", `WS /terminal/${sessionId} 401 unauthorized`);
         socket.close(1008, "Unauthorized");
         return;
       }
 
       // --- Access + container resolution ---
       const containerName = await resolveTerminalAccess(sessionId, userId);
-      server.log.info({ sessionId, userId, containerName }, "[proxy] access result");
 
       if (!containerName) {
-        server.log.warn({ sessionId, userId }, "[proxy] closing: session not found or access denied");
+        log("warn", `WS /terminal/${sessionId} 403 session not found or denied uid=${userId}`);
         socket.close(1008, "Session not found, not running, or access denied");
         return;
       }
@@ -237,7 +267,7 @@ export async function start() {
         ?.split(",")
         .map((p) => p.trim()) ?? ["tty"];
 
-      server.log.info({ sessionId, containerName, protocols }, "[proxy] connecting to upstream");
+      log("info", `WS /terminal/${sessionId} open uid=${userId} → ${containerName}`);
 
       // Buffer messages that arrive from the client while the upstream is
       // still being established (auth + retry loop). Without this, the ttyd
@@ -245,7 +275,9 @@ export async function start() {
       const clientMessageBuffer: Array<{ data: Buffer; isBinary: boolean }> =
         [];
       const bufferClientMessage = (data: Buffer, isBinary: boolean) => {
-        clientMessageBuffer.push({ data, isBinary });
+        if (clientMessageBuffer.length < MAX_CLIENT_BUFFER) {
+          clientMessageBuffer.push({ data, isBinary });
+        }
       };
       socket.on("message", bufferClientMessage);
 
@@ -257,12 +289,9 @@ export async function start() {
           env.TTYD_PORT,
           protocols,
         );
-        server.log.info({ sessionId, containerName }, "[proxy] upstream connected");
+        log("info", `WS /terminal/${sessionId} → ${containerName} ready`);
       } catch (err) {
-        server.log.error(
-          { err, containerName, sessionId },
-          "[proxy] failed to connect to container",
-        );
+        log("error", `WS /terminal/${sessionId} → ${containerName} failed: ${err instanceof Error ? err.message : String(err)}`);
         socket.close(1011, "Could not connect to terminal");
         return;
       }
@@ -289,22 +318,22 @@ export async function start() {
         }
       });
 
-      upstream.on("close", (code, reason) => {
-        server.log.info({ sessionId, code, reason: reason.toString() }, "[proxy] upstream closed");
+      upstream.on("close", (code) => {
+        log("info", `WS /terminal/${sessionId} upstream closed ${code}`);
         if (socket.readyState === WebSocket.OPEN) {
-          socket.close(code, reason);
+          socket.close(code);
         }
       });
 
       upstream.on("error", (err) => {
-        server.log.error({ err, sessionId }, "[proxy] upstream error");
+        log("error", `WS /terminal/${sessionId} upstream error: ${err.message}`);
         if (socket.readyState === WebSocket.OPEN) {
           socket.close(1011, "Upstream error");
         }
       });
 
-      socket.on("close", (code, reason) => {
-        server.log.info({ sessionId, code, reason: reason?.toString() }, "[proxy] client closed");
+      socket.on("close", (code) => {
+        log("info", `WS /terminal/${sessionId} closed ${code}`);
         if (
           upstream.readyState !== WebSocket.CLOSED &&
           upstream.readyState !== WebSocket.CLOSING
@@ -314,14 +343,333 @@ export async function start() {
       });
 
       socket.on("error", (err) => {
-        server.log.error({ err, sessionId }, "[proxy] client socket error");
+        log("error", `WS /terminal/${sessionId} client error: ${err.message}`);
         upstream.terminate();
       });
     },
   );
 
+  // ---------------------------------------------------------------------------
+  // Presence WebSocket — pushes SessionPresence updates to subscribed clients.
+  //
+  // One DB query per change event, result broadcast to ALL clients watching
+  // the same projectId (no per-client polling).
+  // ---------------------------------------------------------------------------
+
+  const PRESENCE_STALE_MS = 5 * 60 * 1000;
+
+  /** Fetch the current non-stale presences for a project. */
+  async function fetchProjectPresence(projectId: string) {
+    const staleThreshold = new Date(Date.now() - PRESENCE_STALE_MS);
+    return db.sessionPresence.findMany({
+      where: {
+        lastSeen: { gte: staleThreshold },
+        session: { projectId },
+      },
+      select: {
+        userId: true,
+        sessionId: true,
+        status: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+            avatarImageUrl: true,
+          },
+        },
+      },
+    });
+  }
+
+  /** projectId → set of open client sockets */
+  const presenceClients = new Map<string, Set<WebSocket>>();
+  /** projectId → broadcaster unsubscribe fn (one per active project) */
+  const presenceUnsubs = new Map<string, () => void>();
+
+  function broadcastPresence(projectId: string) {
+    const clients = presenceClients.get(projectId);
+    if (!clients?.size) return;
+    fetchProjectPresence(projectId)
+      .then((data) => {
+        const json = JSON.stringify(data);
+        for (const ws of clients) {
+          if (ws.readyState === WebSocket.OPEN) ws.send(json);
+        }
+      })
+      .catch(() => {/* best-effort */});
+  }
+
+  /**
+   * WebSocket endpoint for real-time presence updates.
+   * URL: /presence/:projectId
+   */
+  server.get(
+    "/presence/:projectId",
+    { websocket: true },
+    async (socket, request) => {
+      const { projectId } = request.params as { projectId: string };
+
+      // --- Input validation ---
+      if (!projectId || projectId.length > MAX_ID_LEN) {
+        socket.close(1008, "Invalid request");
+        return;
+      }
+
+      // --- Auth ---
+      let userId: string | null;
+      if (DISABLE_AUTH) {
+        userId = await getAdminUserId();
+      } else {
+        userId = await getUserIdFromCookies(request.headers.cookie);
+      }
+
+      if (!userId) {
+        socket.close(1008, "Unauthorized");
+        return;
+      }
+
+      const uid = userId;
+
+      // --- Project access check ---
+      const hasProjectAccess = await resolveProjectAccess(projectId, uid);
+      if (!hasProjectAccess) {
+        log("warn", `WS /presence/${projectId} 403 denied uid=${uid}`);
+        socket.close(1008, "Project not found or access denied");
+        return;
+      }
+
+      // --- Register subscriber ---
+      if (!presenceClients.has(projectId)) {
+        presenceClients.set(projectId, new Set());
+      }
+      presenceClients.get(projectId)!.add(socket);
+
+      // Subscribe to broadcaster once per active projectId
+      if (!presenceUnsubs.has(projectId)) {
+        const unsub = onPresenceChange(projectId, () =>
+          broadcastPresence(projectId),
+        );
+        presenceUnsubs.set(projectId, unsub);
+      }
+
+      const sendCurrentState = () =>
+        fetchProjectPresence(projectId)
+          .then((data) => {
+            if (socket.readyState === WebSocket.OPEN) {
+              socket.send(JSON.stringify(data));
+            }
+          })
+          .catch(() => {/* best-effort */});
+
+      // Send current state immediately on connect.
+      sendCurrentState();
+
+      // Re-send after a short delay to catch heartbeats that raced ahead of
+      // this WS connection being established (common on page load / refresh).
+      const warmupTimer = setTimeout(sendCurrentState, 600);
+      socket.on("close", () => clearTimeout(warmupTimer));
+
+      // Handle heartbeat and leave messages sent by the client over this WS.
+      socket.on("message", async (raw: Buffer) => {
+        let msg: Record<string, unknown>;
+        try {
+          msg = JSON.parse(raw.toString()) as Record<string, unknown>;
+        } catch {
+          return; // malformed — ignore
+        }
+        const { type } = msg;
+        const now = new Date();
+        const staleThreshold = new Date(now.getTime() - PRESENCE_STALE_MS);
+
+        if (type === "heartbeat") {
+          const { sessionId, status } = msg as { sessionId: unknown; status: unknown };
+          if (typeof sessionId !== "string" || !sessionId || sessionId.length > MAX_ID_LEN) return;
+          // Validate the session belongs to this project to prevent cross-project presence claims.
+          const sessionBelongs = await db.terminalSession.findFirst({
+            where: { id: sessionId, projectId },
+            select: { id: true },
+          });
+          if (!sessionBelongs) return;
+          const validStatus = (["active", "viewing", "inactive"] as const).includes(
+            status as "active" | "viewing" | "inactive",
+          )
+            ? (status as "active" | "viewing" | "inactive")
+            : "inactive";
+          await Promise.all([
+            db.sessionPresence.deleteMany({ where: { lastSeen: { lt: staleThreshold } } }),
+            db.sessionPresence.upsert({
+              where: { userId: uid },
+              create: { userId: uid, sessionId, status: validStatus, lastSeen: now },
+              update: { sessionId, status: validStatus, lastSeen: now },
+            }),
+          ]);
+          broadcastPresence(projectId);
+        } else if (type === "leave") {
+          await db.sessionPresence.delete({ where: { userId: uid } }).catch(() => {});
+          broadcastPresence(projectId);
+        }
+      });
+
+      socket.on("close", () => {
+        const clients = presenceClients.get(projectId);
+        if (clients) {
+          clients.delete(socket);
+          // Clean up broadcaster subscription when no clients remain
+          if (clients.size === 0) {
+            presenceClients.delete(projectId);
+            presenceUnsubs.get(projectId)?.();
+            presenceUnsubs.delete(projectId);
+          }
+        }
+      });
+
+      socket.on("error", () => socket.terminate());
+    },
+  );
+
+  // ---------------------------------------------------------------------------
+  // Sessions WebSocket — pushes TerminalSession list updates to subscribed
+  // clients, eliminating the 5-second polling interval.
+  //
+  // Private projects: each subscriber gets only their own sessions.
+  // Shared projects: all subscribers see all sessions (one query serves all).
+  // ---------------------------------------------------------------------------
+
+  const SESSION_STATUSES: TerminalSessionStatus[] = ["running", "pending", "starting"];
+
+  /** Fetch sessions for a project visible to the given user. */
+  async function fetchProjectSessions(projectId: string, userId: string) {
+    const project = await db.project.findFirst({
+      where: { id: projectId, OR: [{ userId }, { shared: true }] },
+      select: { shared: true },
+    });
+    if (!project) return [];
+    return db.terminalSession.findMany({
+      where: {
+        projectId,
+        ...(project.shared ? {} : { userId }),
+        status: { in: SESSION_STATUSES },
+      },
+      orderBy: { createdAt: "asc" },
+      include: { user: { select: { id: true, name: true } } },
+    });
+  }
+
+  /** projectId → Map<socket, userId> */
+  const sessionClients = new Map<string, Map<WebSocket, string>>();
+  /** projectId → broadcaster unsubscribe fn */
+  const sessionUnsubs = new Map<string, () => void>();
+
+  function broadcastSessions(projectId: string) {
+    const clients = sessionClients.get(projectId);
+    if (!clients?.size) return;
+    // Group sockets by userId to deduplicate queries
+    const byUser = new Map<string, Set<WebSocket>>();
+    for (const [ws, uid] of clients) {
+      if (!byUser.has(uid)) byUser.set(uid, new Set());
+      byUser.get(uid)!.add(ws);
+    }
+    for (const [uid, sockets] of byUser) {
+      fetchProjectSessions(projectId, uid)
+        .then((data) => {
+          const json = JSON.stringify(data);
+          for (const ws of sockets) {
+            if (ws.readyState === WebSocket.OPEN) ws.send(json);
+          }
+        })
+        .catch(() => {/* best-effort */});
+    }
+  }
+
+  /**
+   * WebSocket endpoint for real-time session list updates.
+   * URL: /sessions/:projectId
+   */
+  server.get(
+    "/sessions/:projectId",
+    { websocket: true },
+    async (socket, request) => {
+      const { projectId } = request.params as { projectId: string };
+
+      // --- Input validation ---
+      if (!projectId || projectId.length > MAX_ID_LEN) {
+        socket.close(1008, "Invalid request");
+        return;
+      }
+
+      // --- Auth ---
+      let userId: string | null;
+      if (DISABLE_AUTH) {
+        userId = await getAdminUserId();
+      } else {
+        userId = await getUserIdFromCookies(request.headers.cookie);
+      }
+
+      if (!userId) {
+        socket.close(1008, "Unauthorized");
+        return;
+      }
+
+      const uid = userId;
+
+      // --- Project access check ---
+      const hasProjectAccess = await resolveProjectAccess(projectId, uid);
+      if (!hasProjectAccess) {
+        log("warn", `WS /sessions/${projectId} 403 denied uid=${uid}`);
+        socket.close(1008, "Project not found or access denied");
+        return;
+      }
+
+      // --- Register subscriber ---
+      if (!sessionClients.has(projectId)) {
+        sessionClients.set(projectId, new Map());
+      }
+      sessionClients.get(projectId)!.set(socket, uid);
+
+      if (!sessionUnsubs.has(projectId)) {
+        const unsub = onSessionChange(projectId, () =>
+          broadcastSessions(projectId),
+        );
+        sessionUnsubs.set(projectId, unsub);
+      }
+
+      const sendCurrentSessions = () =>
+        fetchProjectSessions(projectId, uid)
+          .then((data) => {
+            if (socket.readyState === WebSocket.OPEN) {
+              socket.send(JSON.stringify(data));
+            }
+          })
+          .catch(() => {/* best-effort */});
+
+      // Send current state immediately on connect.
+      sendCurrentSessions();
+
+      // Re-send after a short delay to catch broadcasts that raced ahead of
+      // this WS connection being established (common on page load / reconnect).
+      const warmupTimer = setTimeout(sendCurrentSessions, 600);
+      socket.on("close", () => clearTimeout(warmupTimer));
+
+      socket.on("close", () => {
+        const clients = sessionClients.get(projectId);
+        if (clients) {
+          clients.delete(socket);
+          if (clients.size === 0) {
+            sessionClients.delete(projectId);
+            sessionUnsubs.get(projectId)?.();
+            sessionUnsubs.delete(projectId);
+          }
+        }
+      });
+
+      socket.on("error", () => socket.terminate());
+    },
+  );
+
   const gracefulShutdown = async (signal: string) => {
-    server.log.info(`Received ${signal}, shutting down proxy...`);
+    log("info", `${signal} received, shutting down`);
     await server.close();
     process.exit(0);
   };
@@ -329,7 +677,7 @@ export async function start() {
   process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
   process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
-  await server.listen({ port: PORT, host: "0.0.0.0" });
-  server.log.info(`[proxy] WS proxy listening on :${PORT}`);
+  await server.listen({ port: PORT, host: "127.0.0.1" });
+  log("info", `WS proxy listening on 127.0.0.1:${PORT}`);
 }
 
