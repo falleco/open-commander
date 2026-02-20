@@ -1,0 +1,88 @@
+# Open Commander — production deploy stack.
+#
+# Usage:
+#   cp .env.deploy.example .env.deploy
+#   # Edit .env.deploy with your values
+#   docker compose -f docker-compose.deploy.yml --env-file .env.deploy up -d
+#
+# Databases (postgres + redis) are NOT included here. Bring your own or use
+# docker-compose.dbs.yml for a quick local setup:
+#   docker compose -f docker-compose.deploy.yml -f docker-compose.dbs.yml \
+#     --env-file .env.deploy up -d
+#
+# The project name is pinned to "open-commander" so volume names are always
+# predictable regardless of the directory the compose file lives in.
+
+name: open-commander
+
+services:
+  ########################
+  # Commander (Web App)  #
+  ########################
+  commander:
+    image: ghcr.io/falleco/open-commander-web:latest
+    container_name: open-commander
+    # privileged is required so the embedded Docker daemon (DinD) can manage
+    # agent containers and their networks inside this single container.
+    privileged: true
+    ports:
+      - "${PORT:-3000}:3000"
+    env_file:
+      - .env.deploy
+    environment:
+      HOST: 0.0.0.0
+      NODE_ENV: production
+      NEXT_PUBLIC_APP_URL: ${PUBLIC_URL}
+      NEXT_PUBLIC_UPLOADTHING_URL_ROOT: ${PUBLIC_URL}
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_HOSTNAME: ${REDIS_HOSTNAME}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_TLS: ${REDIS_TLS:-false}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${PUBLIC_URL}
+      # OAuth providers (optional)
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      # Docker — commander manages agent containers via its own embedded dockerd.
+      DOCKER_HOST: unix:///var/run/docker.sock
+      # TLS certs are generated at /certs by the embedded dockerd (via
+      # dockerd-entrypoint.sh). Agent containers get /certs/client mounted
+      # so they can talk back to dockerd over TCP with TLS verification.
+      DIND_CERTS_VOLUME: /certs/client
+      TTYD_INTERNAL_NETWORK: open-commander-internal
+      TTYD_EGRESS_PROXY_HOST: egress-proxy
+      TTYD_EGRESS_PROXY_PORT: "3128"
+      # State paths — the embedded dockerd resolves bind-mount sources from
+      # the commander container filesystem, so these must be absolute paths
+      # that exist inside this container.
+      AGENT_STATE_PATH: /root/.state
+      AGENT_WORKSPACE: /workspace
+    volumes:
+      # Persist the internal dockerd's data across restarts.
+      - dind-data:/var/lib/docker
+      - agent-state:/root/.state
+      - agent-workspace:/workspace
+      # Optional: mount a custom agents volume to override the baked-in defaults.
+      # Set DOCKER_AGENTS_VOLUME=<volume-name> in your .env.deploy and uncomment:
+      # - ${DOCKER_AGENTS_VOLUME:-agents-default}:/app/agents
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    links:
+      - postgres:postgres.local
+      - redis:redis.local
+    restart: unless-stopped
+
+###############
+#   Volumes   #
+###############
+volumes:
+  dind-data:
+  agent-state:
+  agent-workspace:

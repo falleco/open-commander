@@ -76,39 +76,6 @@ services:
       - TCP:egress-proxy:3128
     restart: unless-stopped
 
-  postgres:
-    image: postgres:16-alpine
-    container_name: commander-postgres
-    restart: unless-stopped
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: commander_dev
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7-alpine
-    container_name: commander-redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-
 ###############
 #   Volumes   #
 ###############
@@ -116,9 +83,6 @@ volumes:
   open-commander-auth:
   open-commander-dind-data:
   open-commander-dind-certs:
-  commander_node_modules:
-  postgres_data:
-  redis_data:
 
 ################
 #   Networks   #

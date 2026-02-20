@@ -9,6 +9,7 @@ const DOCKER_TIMEOUT = 20000;
 const execFileAsync = promisify(execFile);
 
 async function runDocker(args: string[]) {
+  console.log("Running Docker command: docker", args.join(" "));
   return execFileAsync("docker", args, { timeout: DOCKER_TIMEOUT });
 }
 
@@ -56,6 +57,11 @@ export const dockerService = {
       options.mounts.forEach((mount) => {
         const mode = mount.mode ?? DockerMountMode.ReadWrite;
         args.push("-v", `${mount.source}:${mount.target}:${mode}`);
+      });
+    }
+    if (options.extraHosts?.length) {
+      options.extraHosts.forEach((host) => {
+        args.push("--add-host", host);
       });
     }
     args.push(options.image);
@@ -286,6 +292,17 @@ export const dockerService = {
    */
   async exec(name: string, command: string[]) {
     return runDocker(["exec", normalizeContainerName(name), ...command]);
+  },
+
+  /**
+   * Pull an image from the registry. Resolves when the pull completes.
+   *
+   * @param image - Full image reference (e.g. "opencommander/agent:latest").
+   */
+  async pull(image: string) {
+    return execFileAsync("docker", ["pull", image], {
+      timeout: 10 * 60 * 1000, // 10 min — large images can take a while
+    });
   },
 
   async safeRemove(name: string, maxAttempts: number = 5) {

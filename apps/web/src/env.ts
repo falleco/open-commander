@@ -25,7 +25,8 @@ export const env = createEnv({
     GOOGLE_CLIENT_SECRET: z.string().optional(),
     APPLE_CLIENT_ID: z.string().optional(),
     APPLE_CLIENT_SECRET: z.string().optional(),
-    ENABLE_ARTIFICIAL_TRPC_DELAY: z.coerce.boolean().default(false),
+    ENABLE_ARTIFICIAL_TRPC_DELAY: z.string().default("false")
+    .transform((input) => input === "true"),
     DATABASE_URL: z
       .string()
       .url()
@@ -37,7 +38,8 @@ export const env = createEnv({
     REDIS_HOSTNAME: z.string().default("localhost"),
     REDIS_PORT: z.coerce.number().default(6379),
     REDIS_PASSWORD: z.string().optional(),
-    REDIS_TLS: z.coerce.boolean().default(false),
+    REDIS_TLS: z.string().default("false")
+    .transform((input) => input === "true"),
     GITHUB_TOKEN: z.string().optional(),
   },
   client: {

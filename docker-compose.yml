@@ -21,12 +21,16 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/commander_dev
       REDIS_HOSTNAME: redis
       DIND_CERTS_VOLUME: open-commander_open-commander-dind-certs
-      AGENT_STATE_PATH: ${AGENT_STATE_PATH:-/home/commander/.state}
-      AGENT_WORKSPACE: ${AGENT_WORKSPACE:-/workspace}
+      # Must equal the host path so that bind-mounts passed to the host Docker
+      # daemon (via the socket) resolve correctly on the host filesystem.
+      AGENT_STATE_PATH: ${DOCKER_AGENT_STATE_PATH}
+      AGENT_WORKSPACE: ${DOCKER_AGENT_WORKSPACE}
       DOCKER_HOST: unix:///var/run/docker.sock
     volumes:
-      - ${DOCKER_AGENT_STATE_PATH}:/root/.state
-      - ${DOCKER_AGENT_WORKSPACE}:/workspace
+      # Mount host paths at themselves so the path is identical inside the
+      # container and on the host — required for Docker bind-mounts to work.
+      - ${DOCKER_AGENT_STATE_PATH}:${DOCKER_AGENT_STATE_PATH}
+      - ${DOCKER_AGENT_WORKSPACE}:${DOCKER_AGENT_WORKSPACE}
       - ./agents:/root/agents
       - /var/run/docker.sock:/var/run/docker.sock
     links:

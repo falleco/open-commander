@@ -45,4 +45,6 @@ export type DockerRunOptions = {
   mounts?: DockerMount[];
   /** Arguments appended after the image name. */
   args?: string[];
+  /** Extra host-to-IP mappings added via --add-host (e.g. "docker:host-gateway"). */
+  extraHosts?: string[];
 };

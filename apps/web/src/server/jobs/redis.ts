@@ -1,5 +1,6 @@
 import Redis from "ioredis";
 import { env } from "@/env";
+
 export const redisConnection = new Redis({
   host: env.REDIS_HOSTNAME ?? "localhost",
   port: env.REDIS_PORT ?? 6379,

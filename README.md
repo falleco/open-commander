@@ -324,6 +324,67 @@ cd apps/web
 bun run build
 ```
 
+### Building Docker images locally
+
+All images use the repo root as the Docker build context.
+
+**Commander (web app)**
+```bash
+docker build \
+  -f docker/commander/Dockerfile \
+  --target runner \
+  -t ghcr.io/falleco/open-commander-web:local \
+  .
+```
+
+**Egress proxy**
+```bash
+docker build \
+  -f docker/egress/Dockerfile \
+  -t ghcr.io/falleco/open-commander-egress:local \
+  docker/egress
+```
+
+**Agent core image**
+```bash
+docker build \
+  -f docker/core/Dockerfile \
+  -t ghcr.io/falleco/open-commander-core:local \
+  docker/core
+```
+
+**Agent image** (requires core to be built first)
+```bash
+docker build \
+  -f docker/agent/Dockerfile \
+  -t ghcr.io/falleco/open-commander-agent:local \
+  docker/agent
+```
+
+**Multi-platform builds (amd64 + arm64)**
+```bash
+docker buildx create --use --name multi-platform
+
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -f docker/commander/Dockerfile \
+  --target runner \
+  -t ghcr.io/falleco/open-commander-web:local \
+  --load \
+  .
+```
+
+**Testing the deploy stack with local images**
+
+Build the deploy images, tag them to match what the compose file expects, then run:
+```bash
+docker build -f docker/commander/Dockerfile --target runner -t ghcr.io/falleco/open-commander-web:latest .
+docker build -f docker/egress/Dockerfile -t ghcr.io/falleco/open-commander-egress:latest docker/egress
+
+cp .env.deploy.example .env.deploy  # fill in values
+docker compose -f docker-compose.deploy.yml -f docker-compose.dbs.yml --env-file .env.deploy up -d
+```
+
 ---
 
 ## Security Considerations

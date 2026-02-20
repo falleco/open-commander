@@ -39,6 +39,13 @@ const EGRESS_PROXY_PORT = env.TTYD_EGRESS_PROXY_PORT;
 const DIND_HOST = "docker";
 const DIND_PORT = 2376;
 
+// When commander uses a unix socket, the internal dockerd runs inside this
+// container. Agent containers need --add-host so "docker" resolves to the
+// host-gateway IP where the internal dockerd listens on TCP 2376.
+const EXTRA_HOSTS = (process.env.DOCKER_HOST ?? "").startsWith("unix://")
+  ? ["docker:host-gateway"]
+  : [];
+
 const resolveWorkspaceMount = async (workspaceSuffix?: string | null) => {
   if (!AGENT_WORKSPACE) return null;
   const trimmed = (workspaceSuffix ?? "").trim();
@@ -170,6 +177,7 @@ export const sessionService = {
           network: env.TTYD_INTERNAL_NETWORK,
           env: containerEnv,
           mounts,
+          extraHosts: EXTRA_HOSTS,
           args: containerArgs,
         });
       } catch (error) {
@@ -194,6 +202,7 @@ export const sessionService = {
               network: env.TTYD_INTERNAL_NETWORK,
               env: containerEnv,
               mounts,
+              extraHosts: EXTRA_HOSTS,
               args: containerArgs,
             });
           }
