@@ -65,6 +65,7 @@ COPY --from=build /app/apps/web/prisma ./apps/web/prisma
 # Operators can shadow /app/agents with a Docker volume for customization.
 COPY --from=build /app/agents ./agents
 
+COPY docker/commander/server.js /app/server.js
 COPY docker/commander/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
