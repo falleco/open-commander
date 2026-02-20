@@ -30,7 +30,7 @@ docker network create --internal open-commander-internal 2>/dev/null || true
 docker network create open-commander-egress 2>/dev/null || true
 
 # ─── Egress proxy ─────────────────────────────────────────────────────────────
-EGRESS_IMAGE="${EGRESS_IMAGE:-ghcr.io/falleco/open-commander-egress:latest}"
+EGRESS_IMAGE="${EGRESS_IMAGE:-ghcr.io/open-commander/open-commander-egress:latest}"
 echo "[commander] Starting egress proxy (${EGRESS_IMAGE})..."
 # Remove a stale container from a previous run before recreating it.
 docker rm -f open-commander-egress-proxy 2>/dev/null || true

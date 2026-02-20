@@ -20,7 +20,7 @@ services:
   # Commander (Web App)  #
   ########################
   commander:
-    image: ghcr.io/falleco/open-commander-web:latest
+    image: ghcr.io/open-commander/open-commander-web:latest
     container_name: open-commander
     # privileged is required so the embedded Docker daemon (DinD) can manage
     # agent containers and their networks inside this single container.

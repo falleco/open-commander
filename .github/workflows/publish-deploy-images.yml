@@ -34,7 +34,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/falleco/open-commander-web
+          images: ${{ env.REGISTRY }}/open-commander/open-commander-web
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=sha,format=short
@@ -50,8 +50,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/falleco/open-commander-web:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/falleco/open-commander-web:buildcache,mode=max
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/open-commander/open-commander-web:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/open-commander/open-commander-web:buildcache,mode=max
 
   egress:
     runs-on: ubuntu-latest
@@ -68,7 +68,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/falleco/open-commander-egress
+          images: ${{ env.REGISTRY }}/open-commander/open-commander-egress
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=sha,format=short
@@ -83,5 +83,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/falleco/open-commander-egress:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/falleco/open-commander-egress:buildcache,mode=max
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/open-commander/open-commander-egress:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/open-commander/open-commander-egress:buildcache,mode=max

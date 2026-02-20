@@ -23,7 +23,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  REPOSITORY: falleco/open-commander
+  REPOSITORY: open-commander/open-commander
 
 jobs:
   build-core:
@@ -42,7 +42,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/falleco/open-commander-core
+          images: ${{ env.REGISTRY }}/open-commander/open-commander-core
           tags: |
             type=raw,value=${{ inputs.tag }}
             type=sha,format=short
@@ -55,8 +55,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/falleco/open-commander-core:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/falleco/open-commander-core:buildcache,mode=max
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/open-commander/open-commander-core:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/open-commander/open-commander-core:buildcache,mode=max
 
   build-agent:
     if: ${{ inputs.image == 'agent' }}
@@ -74,7 +74,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/falleco/open-commander-agent
+          images: ${{ env.REGISTRY }}/open-commander/open-commander-agent
           tags: |
             type=raw,value=${{ inputs.tag }}
             type=sha,format=short
@@ -87,8 +87,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/falleco/open-commander-agent:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/falleco/open-commander-agent:buildcache,mode=max
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/open-commander/open-commander-agent:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/open-commander/open-commander-agent:buildcache,mode=max
 
   build-web:
     if: ${{ inputs.image == 'web' }}
@@ -106,7 +106,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/falleco/open-commander-web
+          images: ${{ env.REGISTRY }}/open-commander/open-commander-web
           tags: |
             type=raw,value=${{ inputs.tag }}
             type=sha,format=short
@@ -120,8 +120,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/falleco/open-commander-web:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/falleco/open-commander-web:buildcache,mode=max
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/open-commander/open-commander-web:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/open-commander/open-commander-web:buildcache,mode=max
 
   build-egress:
     if: ${{ inputs.image == 'egress' }}
@@ -139,7 +139,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/falleco/open-commander-egress
+          images: ${{ env.REGISTRY }}/open-commander/open-commander-egress
           tags: |
             type=raw,value=${{ inputs.tag }}
             type=sha,format=short
@@ -152,5 +152,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/falleco/open-commander-egress:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/falleco/open-commander-egress:buildcache,mode=max
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/open-commander/open-commander-egress:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/open-commander/open-commander-egress:buildcache,mode=max
