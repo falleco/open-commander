@@ -1,51 +1,53 @@
+name: open-commander
+
 services:
   ########################
   # Commander (Web App)  #
   ########################
-  commander:
-    image: opencommander/web
-    build:
-      context: .
-      dockerfile: docker/commander/Dockerfile
-      target: runner
-    container_name: open-commander
-    ports:
-      - "3000:3000"
-    env_file:
-      - ./apps/web/.env
-    environment:
-      HOST: 0.0.0.0
-      NODE_ENV: development
-      NEXT_PUBLIC_APP_URL: http://localhost:3000
-      NEXT_PUBLIC_UPLOADTHING_URL_ROOT: http://localhost:3000
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/commander_dev
-      REDIS_HOSTNAME: redis
-      DIND_CERTS_VOLUME: open-commander_open-commander-dind-certs
-      # Must equal the host path so that bind-mounts passed to the host Docker
-      # daemon (via the socket) resolve correctly on the host filesystem.
-      AGENT_STATE_PATH: ${DOCKER_AGENT_STATE_PATH}
-      AGENT_WORKSPACE: ${DOCKER_AGENT_WORKSPACE}
-      DOCKER_HOST: unix:///var/run/docker.sock
-    volumes:
-      # Mount host paths at themselves so the path is identical inside the
-      # container and on the host — required for Docker bind-mounts to work.
-      - ${DOCKER_AGENT_STATE_PATH}:${DOCKER_AGENT_STATE_PATH}
-      - ${DOCKER_AGENT_WORKSPACE}:${DOCKER_AGENT_WORKSPACE}
-      - ./agents:/root/agents
-      - /var/run/docker.sock:/var/run/docker.sock
-    links:
-      - postgres:postgres.local
-      - redis:redis.local
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      egress-proxy:
-        condition: service_started
-      docker-dind:
-        condition: service_started
-    restart: unless-stopped
+  # commander:
+  #   image: opencommander/web
+  #   build:
+  #     context: .
+  #     dockerfile: docker/commander/Dockerfile
+  #     target: runner
+  #   container_name: open-commander
+  #   ports:
+  #     - "3000:3000"
+  #   env_file:
+  #     - ./apps/web/.env
+  #   environment:
+  #     HOST: 0.0.0.0
+  #     NODE_ENV: development
+  #     NEXT_PUBLIC_APP_URL: http://localhost:3000
+  #     NEXT_PUBLIC_UPLOADTHING_URL_ROOT: http://localhost:3000
+  #     DATABASE_URL: postgresql://postgres:postgres@postgres:5432/commander_dev
+  #     REDIS_HOSTNAME: redis
+  #     DIND_CERTS_VOLUME: open-commander_open-commander-dind-certs
+  #     # Must equal the host path so that bind-mounts passed to the host Docker
+  #     # daemon (via the socket) resolve correctly on the host filesystem.
+  #     AGENT_STATE_PATH: ${DOCKER_AGENT_STATE_PATH}
+  #     AGENT_WORKSPACE: ${DOCKER_AGENT_WORKSPACE}
+  #     DOCKER_HOST: unix:///var/run/docker.sock
+  #   volumes:
+  #     # Mount host paths at themselves so the path is identical inside the
+  #     # container and on the host — required for Docker bind-mounts to work.
+  #     - ${DOCKER_AGENT_STATE_PATH}:${DOCKER_AGENT_STATE_PATH}
+  #     - ${DOCKER_AGENT_WORKSPACE}:${DOCKER_AGENT_WORKSPACE}
+  #     - ./agents:/root/agents
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   links:
+  #     - postgres:postgres.local
+  #     - redis:redis.local
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     egress-proxy:
+  #       condition: service_started
+  #     docker-dind:
+  #       condition: service_started
+  #   restart: unless-stopped
 
   ########################
   #   Worker: All Jobs   #
@@ -202,8 +204,8 @@ services:
       - "5432:5432"
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: commander_dev
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: commander
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

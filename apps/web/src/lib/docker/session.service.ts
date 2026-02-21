@@ -4,7 +4,6 @@ import { TRPCError } from "@trpc/server";
 import { env } from "@/env";
 import { escapeShellArg, sessionContainerNames } from "@/lib/utils";
 import { db } from "@/server/db";
-import { notifySessionChange } from "@/server/session-broadcaster";
 import { dockerService } from "./docker.service";
 import { ingressService } from "./ingress.service";
 import { buildAgentMounts } from "./mounts";
@@ -38,13 +37,6 @@ const EGRESS_PROXY_HOST = env.TTYD_EGRESS_PROXY_HOST;
 const EGRESS_PROXY_PORT = env.TTYD_EGRESS_PROXY_PORT;
 const DIND_HOST = "docker";
 const DIND_PORT = 2376;
-
-// When commander uses a unix socket, the internal dockerd runs inside this
-// container. Agent containers need --add-host so "docker" resolves to the
-// host-gateway IP where the internal dockerd listens on TCP 2376.
-const EXTRA_HOSTS = (process.env.DOCKER_HOST ?? "").startsWith("unix://")
-  ? ["docker:host-gateway"]
-  : [];
 
 const resolveWorkspaceMount = async (workspaceSuffix?: string | null) => {
   if (!AGENT_WORKSPACE) return null;
@@ -89,8 +81,21 @@ export type StopSessionResult = {
 };
 
 export type StartSessionResult = {
+  port: number;
+  wsPath: string;
   containerName: string;
 };
+
+async function prepareIngressContainer(
+  sessionId: string,
+  targetContainer: string,
+) {
+  const { ingressContainer } = sessionContainerNames(sessionId);
+  const configPath = await ingressService.setup(sessionId, targetContainer);
+  await ingressService.run(ingressContainer, configPath);
+  await ingressService.connect(ingressContainer);
+  return ingressContainer;
+}
 
 export const sessionService = {
   async start(
@@ -103,17 +108,15 @@ export const sessionService = {
     },
   ): Promise<StartSessionResult> {
     const reset = options?.reset ?? false;
-    // Short-circuit only when the session is already running and no reset was
-    // requested. When reset=true we fall through so dockerService.restart runs.
-    if (!reset) {
-      const existingSession = await db.terminalSession.findUnique({
-        where: { id: sessionId, userId, status: { in: ["starting", "running"] } },
-      });
-      if (existingSession) {
-        return {
-          containerName: existingSession.containerName as string,
-        };
-      }
+    const existingSession = await db.terminalSession.findUnique({
+      where: { id: sessionId, userId, status: { in: ["starting", "running"] } },
+    });
+    if (existingSession) {
+      return {
+        port: existingSession.port as number,
+        wsPath: existingSession.wsPath as string,
+        containerName: existingSession.containerName as string,
+      };
     }
 
     const session = await db.terminalSession.findUnique({
@@ -170,53 +173,42 @@ export const sessionService = {
         "0.0.0.0",
         ...TTYD_CMD,
       ];
-      // Ensure the image is locally available before running. Docker daemon
-      // deduplicates concurrent pulls, so if the background prefetch is still
-      // pulling this image, this call will wait for it to finish rather than
-      // racing — eliminating layer lock contention entirely.
-      await dockerService.pull(IMAGE);
-
-      const runOptions = {
-        name: agentContainer,
-        image: IMAGE,
-        network: env.TTYD_INTERNAL_NETWORK,
-        env: containerEnv,
-        mounts,
-        extraHosts: EXTRA_HOSTS,
-        args: containerArgs,
-      };
-
-      // Retry on layer lock contention — safety net in case a concurrent pull
-      // starts between the pull above and the run below.
-      const MAX_LAYER_RETRIES = 5;
-      let launched = false;
-      for (let attempt = 0; attempt <= MAX_LAYER_RETRIES && !launched; attempt++) {
-        try {
-          await dockerService.run(runOptions);
-          launched = true;
-        } catch (error) {
-          let stderr = "";
-          if (typeof error === "object" && error !== null && "stderr" in error) {
-            const maybe = (error as { stderr?: unknown }).stderr;
-            if (typeof maybe === "string") stderr = maybe;
+      try {
+        await dockerService.run({
+          name: agentContainer,
+          image: IMAGE,
+          network: env.TTYD_INTERNAL_NETWORK,
+          env: containerEnv,
+          mounts,
+          args: containerArgs,
+        });
+      } catch (error) {
+        let stderr = "";
+        if (typeof error === "object" && error !== null && "stderr" in error) {
+          const maybe = (error as { stderr?: unknown }).stderr;
+          if (typeof maybe === "string") {
+            stderr = maybe;
           }
-          const detail = stderr + (error instanceof Error ? error.message : "");
-          if (stderr.includes("already in use") || stderr.includes("Conflict")) {
-            try {
-              await dockerService.start(agentContainer);
-            } catch {
-              await dockerService.safeRemove(agentContainer);
-              await dockerService.ensureNetwork(env.TTYD_INTERNAL_NETWORK, {
-                internal: true,
-              });
-              await dockerService.run(runOptions);
-            }
-            launched = true;
-          } else if (detail.includes("locked") && attempt < MAX_LAYER_RETRIES) {
-            await new Promise((r) => setTimeout(r, 5000));
-          } else {
-            throw error;
+        }
+        if (stderr.includes("already in use") || stderr.includes("Conflict")) {
+          try {
+            await dockerService.start(agentContainer);
+          } catch {
+            await dockerService.safeRemove(agentContainer);
+            await dockerService.ensureNetwork(env.TTYD_INTERNAL_NETWORK, {
+              internal: true,
+            });
+            await dockerService.run({
+              name: agentContainer,
+              image: IMAGE,
+              network: env.TTYD_INTERNAL_NETWORK,
+              env: containerEnv,
+              mounts,
+              args: containerArgs,
+            });
           }
+        } else {
+          throw error;
         }
       }
     } else if (reset) {
@@ -250,16 +242,49 @@ export const sessionService = {
       }
     }
 
-    const updated = await db.terminalSession.update({
+    const ingressContainerName = await prepareIngressContainer(
+      sessionId,
+      agentContainer,
+    );
+    let resolvedPort = await dockerService.getPortWithRetries(
+      ingressContainerName,
+      PORT,
+    );
+    if (!resolvedPort) {
+      await dockerService.safeRemove(ingressContainerName);
+      const rebuiltIngressName = await prepareIngressContainer(
+        sessionId,
+        agentContainer,
+      );
+      resolvedPort = await dockerService.getPortWithRetries(
+        rebuiltIngressName,
+        PORT,
+      );
+    }
+    if (!resolvedPort) {
+      const ingressRunning =
+        await dockerService.isRunning(ingressContainerName);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: `Porta do container não encontrada (ingress=${ingressContainerName}, running=${ingressRunning ?? "null"}).`,
+      });
+    }
+
+    await db.terminalSession.update({
       where: { id: sessionId, userId },
       data: {
+        port: resolvedPort,
+        wsPath: "/ws",
         containerName: agentContainer,
         status: "running",
       },
     });
-    if (updated.projectId) notifySessionChange(updated.projectId);
 
-    return { containerName: agentContainer };
+    return {
+      port: resolvedPort,
+      wsPath: "/ws",
+      containerName: agentContainer,
+    };
   },
 
   async stop(sessionId: string): Promise<StopSessionResult> {

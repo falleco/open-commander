@@ -34,32 +34,32 @@ export async function register() {
 
     // Pre-pull agent images in the background so the first session start
     // doesn't block on a cold DinD cache.
-    prefetchAgentImages().catch(() => {/* best-effort */});
+    // prefetchAgentImages().catch(() => {/* best-effort */});
   }
 }
 
-/**
- * Pulls all configured agent images in the background so the first session
- * start is faster. Failures are intentionally swallowed — the pull will
- * simply happen on-demand when the first container is launched instead.
- */
-async function prefetchAgentImages(): Promise<void> {
-  const { env } = await import("@/env");
-  const { dockerService } = await import("@/lib/docker/docker.service");
+// /**
+//  * Pulls all configured agent images in the background so the first session
+//  * start is faster. Failures are intentionally swallowed — the pull will
+//  * simply happen on-demand when the first container is launched instead.
+//  */
+// async function prefetchAgentImages(): Promise<void> {
+//   const { env } = await import("@/env");
+//   const { dockerService } = await import("@/lib/docker/docker.service");
 
-  const images = [
-    env.TTYD_IMAGE,
-  ].filter(Boolean) as string[];
+//   const images = [
+//     env.TTYD_IMAGE,
+//   ].filter(Boolean) as string[];
 
-  console.log('PRE-PULLING AGENT IMAGES', images);
-  await Promise.allSettled(
-    images.map((image) =>
-      dockerService.pull(image).then(() =>
-        console.log(`[prefetch] pulled ${image}`),
-      ).catch((err: unknown) =>
-        console.warn(`[prefetch] could not pull ${image}:`, err instanceof Error ? err.message : err),
-      ),
-    ),
-  );
-  console.log('PRE-PULLING AGENT IMAGES COMPLETED');
-}
+//   console.log('PRE-PULLING AGENT IMAGES', images);
+//   await Promise.allSettled(
+//     images.map((image) =>
+//       dockerService.pull(image).then(() =>
+//         console.log(`[prefetch] pulled ${image}`),
+//       ).catch((err: unknown) =>
+//         console.warn(`[prefetch] could not pull ${image}:`, err instanceof Error ? err.message : err),
+//       ),
+//     ),
+//   );
+//   console.log('PRE-PULLING AGENT IMAGES COMPLETED');
+// }

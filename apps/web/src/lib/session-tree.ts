@@ -26,12 +26,16 @@ export type SessionTreeNode<T extends SessionInput = SessionInput> = {
 export function buildSessionTree<T extends SessionInput>(
   sessions: T[],
 ): SessionTreeNode<T>[] {
+  const sessionIds = new Set(sessions.map((s) => s.id));
   const childrenMap = new Map<string | null, T[]>();
 
   for (const s of sessions) {
-    const list = childrenMap.get(s.parentId) ?? [];
+    // Treat sessions whose parent is not in the current list as root nodes.
+    const effectiveParentId =
+      s.parentId === null || !sessionIds.has(s.parentId) ? null : s.parentId;
+    const list = childrenMap.get(effectiveParentId) ?? [];
     list.push(s);
-    childrenMap.set(s.parentId, list);
+    childrenMap.set(effectiveParentId, list);
   }
 
   const result: SessionTreeNode<T>[] = [];

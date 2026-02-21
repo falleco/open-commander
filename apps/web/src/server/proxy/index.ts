@@ -14,84 +14,6 @@ import type { TerminalSessionStatus } from "@/generated/prisma";
 import { onPresenceChange } from "@/server/presence-broadcaster";
 import { onSessionChange } from "@/server/session-broadcaster";
 
-/**
- * Bun's `http.request` fires a `response` event (not `upgrade`) for 101
- * responses, so the `ws` npm package's WebSocket client does not work for
- * outgoing connections on Bun.  We use Bun's native global `WebSocket`
- * instead and wrap it in a thin EventEmitter-compatible shim so the rest of
- * the proxy code can stay unchanged.
- */
-class UpstreamWs {
-  private _ws: globalThis.WebSocket;
-
-  // Mirror the constants the bridging code references.
-  static readonly OPEN = 1;
-  static readonly CLOSING = 2;
-  static readonly CLOSED = 3;
-
-  constructor(url: string) {
-    // Do NOT request a subprotocol – ttyd doesn't echo it back, and Bun's
-    // native WS (unlike the ws package) would reject the non-echoed protocol.
-    this._ws = new globalThis.WebSocket(url);
-    this._ws.binaryType = "arraybuffer";
-  }
-
-  get readyState() {
-    return this._ws.readyState;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  once(event: "open" | "error" | "close", cb: (...args: any[]) => void) {
-    if (event === "open") {
-      this._ws.addEventListener("open", () => cb(), { once: true });
-    } else if (event === "error") {
-      this._ws.addEventListener(
-        "error",
-        (e) => cb(new Error((e as ErrorEvent).message ?? "WebSocket error")),
-        { once: true },
-      );
-    } else if (event === "close") {
-      this._ws.addEventListener(
-        "close",
-        (e) => cb((e as CloseEvent).code),
-        { once: true },
-      );
-    }
-    return this;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  on(event: string, cb: (...args: any[]) => void) {
-    if (event === "message") {
-      this._ws.addEventListener("message", (e) => {
-        const raw = (e as MessageEvent).data;
-        const buf =
-          raw instanceof ArrayBuffer
-            ? Buffer.from(raw)
-            : typeof raw === "string"
-              ? Buffer.from(raw)
-              : Buffer.from(raw as ArrayBuffer);
-        cb(buf, true);
-      });
-    } else if (event === "close") {
-      this._ws.addEventListener("close", (e) => cb((e as CloseEvent).code));
-    } else if (event === "error") {
-      this._ws.addEventListener("error", (e) => cb(e));
-    }
-    return this;
-  }
-
-  send(data: Buffer | string, _opts?: { binary?: boolean }) {
-    if (this._ws.readyState === 1 /* OPEN */) {
-      this._ws.send(data);
-    }
-  }
-
-  terminate() {
-    this._ws.close();
-  }
-}
-
 const PORT = Number(process.env.PROXY_PORT ?? 7682);
 const DISABLE_AUTH = process.env.NEXT_PUBLIC_DISABLE_AUTH === "true";
 
@@ -210,32 +132,39 @@ function createDockerExecBridge(
 }
 
 /**
- * Connects to the ttyd WebSocket inside a container using Bun's native
- * WebSocket (via UpstreamWs shim).
+ * Connects to the ttyd WebSocket inside a container.
  *
  * Strategy:
  * 1. Try a direct WebSocket connection to `ws://<containerName>:<port>/ws`.
- *    Works in environments where the proxy is on the same Docker network.
- * 2. If direct fails (DNS not resolvable in DinD mode), resolve the container
- *    IP via `docker inspect` and connect directly by IP.
- * 3. Fall back to a `docker exec nc` TCP bridge that tunnels through the
- *    Docker daemon socket.
+ *    This succeeds immediately in Docker environments where the proxy is on
+ *    the same internal network as the agent containers.
+ * 2. If direct connection fails (DNS resolution failure on macOS host, or
+ *    any other network error), fall back to a `docker exec nc` bridge that
+ *    tunnels through the Docker daemon socket.
  *
- * The returned UpstreamWs is already in OPEN state.
+ * The returned WebSocket is already in OPEN state.
  */
 async function connectToContainerWs(
   containerName: string,
   ttydPort: number,
+  protocols: string[],
   maxAttempts = 10,
   retryDelayMs = 500,
-): Promise<UpstreamWs> {
-  const tryUrl = (url: string): Promise<UpstreamWs | null> =>
-    new Promise((resolve) => {
-      const ws = new UpstreamWs(url);
+): Promise<WebSocket> {
+  const tryOnce = async (): Promise<WebSocket | null> => {
+    // --- Attempt 1: direct connection ---
+    const direct = await new Promise<WebSocket | null>((resolve) => {
+      const ws = new WebSocket(
+        `ws://${containerName}:${ttydPort}/ws`,
+        protocols,
+      );
+      ws.binaryType = "nodebuffer";
+
       const timer = setTimeout(() => {
         ws.terminate();
         resolve(null);
       }, 1500);
+
       ws.once("open", () => {
         clearTimeout(timer);
         resolve(ws);
@@ -246,15 +175,14 @@ async function connectToContainerWs(
       });
     });
 
-  const tryOnce = async (): Promise<UpstreamWs | null> => {
-    // --- Attempt 1: direct hostname ---
-    const direct = await tryUrl(`ws://${containerName}:${ttydPort}/ws`);
     if (direct) return direct;
 
     // --- Attempt 1.5: direct connection by container IP ---
     // Hostname resolution fails in DinD mode because the commander process
     // uses the outer Docker DNS, which doesn't know about containers inside
-    // the internal dockerd. Bridge network IPs ARE directly reachable.
+    // the internal dockerd. The bridge network IPs are directly reachable
+    // from the commander process's network namespace, so we resolve the IP
+    // via `docker inspect` and connect straight to it.
     try {
       const { stdout } = await execFileAsync("docker", [
         "inspect",
@@ -267,7 +195,25 @@ async function connectToContainerWs(
         .map((l) => l.trim())
         .find((l) => l.length > 0);
       if (containerIp) {
-        const byIp = await tryUrl(`ws://${containerIp}:${ttydPort}/ws`);
+        const byIp = await new Promise<WebSocket | null>((resolve) => {
+          const ws = new WebSocket(
+            `ws://${containerIp}:${ttydPort}/ws`,
+            protocols,
+          );
+          ws.binaryType = "nodebuffer";
+          const timer = setTimeout(() => {
+            ws.terminate();
+            resolve(null);
+          }, 1500);
+          ws.once("open", () => {
+            clearTimeout(timer);
+            resolve(ws);
+          });
+          ws.once("error", () => {
+            clearTimeout(timer);
+            resolve(null);
+          });
+        });
         if (byIp) return byIp;
       }
     } catch {
@@ -275,12 +221,18 @@ async function connectToContainerWs(
     }
 
     // --- Attempt 2: docker exec nc bridge ---
-    // Creates a loopback TCP tunnel through the Docker daemon so the native
-    // WebSocket client can reach ttyd even when direct IP routing fails.
     const bridge = await createDockerExecBridge(containerName, ttydPort);
-    const byBridge = await tryUrl(`ws://127.0.0.1:${bridge.port}/ws`);
-    if (!byBridge) bridge.cleanup();
-    return byBridge;
+
+    return new Promise<WebSocket | null>((resolve) => {
+      const ws = new WebSocket(`ws://127.0.0.1:${bridge.port}/ws`, protocols);
+      ws.binaryType = "nodebuffer";
+
+      ws.once("open", () => resolve(ws));
+      ws.once("error", () => {
+        bridge.cleanup();
+        resolve(null);
+      });
+    });
   };
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -354,6 +306,13 @@ export async function start() {
         return;
       }
 
+      // Forward the WebSocket subprotocol header. ttyd uses the "tty" subprotocol.
+      const protocols = (
+        request.headers["sec-websocket-protocol"] as string | undefined
+      )
+        ?.split(",")
+        .map((p) => p.trim()) ?? ["tty"];
+
       log("info", `WS /terminal/${sessionId} open uid=${userId} → ${containerName}`);
 
       // Buffer messages that arrive from the client while the upstream is
@@ -369,11 +328,12 @@ export async function start() {
       socket.on("message", bufferClientMessage);
 
       // --- Upstream connection (direct or via docker exec bridge) ---
-      let upstream: UpstreamWs;
+      let upstream: WebSocket;
       try {
         upstream = await connectToContainerWs(
           containerName,
           env.TTYD_PORT,
+          protocols,
         );
         log("info", `WS /terminal/${sessionId} → ${containerName} ready`);
       } catch (err) {
@@ -404,15 +364,15 @@ export async function start() {
         }
       });
 
-      upstream.on("close", (code: number) => {
+      upstream.on("close", (code) => {
         log("info", `WS /terminal/${sessionId} upstream closed ${code}`);
         if (socket.readyState === WebSocket.OPEN) {
           socket.close(code);
         }
       });
 
-      upstream.on("error", (err: unknown) => {
-        log("error", `WS /terminal/${sessionId} upstream error: ${err instanceof Error ? err.message : String(err)}`);
+      upstream.on("error", (err) => {
+        log("error", `WS /terminal/${sessionId} upstream error: ${err.message}`);
         if (socket.readyState === WebSocket.OPEN) {
           socket.close(1011, "Upstream error");
         }
@@ -631,11 +591,8 @@ export async function start() {
       where: { id: projectId, OR: [{ userId }, { shared: true }] },
       select: { shared: true },
     });
-    if (!project) {
-      log("warn", `sessions fetch: project ${projectId} not found for uid=${userId}`);
-      return [];
-    }
-    const sessions = await db.terminalSession.findMany({
+    if (!project) return [];
+    return db.terminalSession.findMany({
       where: {
         projectId,
         ...(project.shared ? {} : { userId }),
@@ -644,8 +601,6 @@ export async function start() {
       orderBy: { createdAt: "asc" },
       include: { user: { select: { id: true, name: true } } },
     });
-    log("info", `sessions fetch: project=${projectId} uid=${userId} → ${sessions.length} session(s)`);
-    return sessions;
   }
 
   /** projectId → Map<socket, userId> */
@@ -699,7 +654,6 @@ export async function start() {
       }
 
       if (!userId) {
-        log("warn", `WS /sessions/${projectId} 401 unauthorized`);
         socket.close(1008, "Unauthorized");
         return;
       }
@@ -713,8 +667,6 @@ export async function start() {
         socket.close(1008, "Project not found or access denied");
         return;
       }
-
-      log("info", `WS /sessions/${projectId} open uid=${uid}`);
 
       // --- Register subscriber ---
       if (!sessionClients.has(projectId)) {
