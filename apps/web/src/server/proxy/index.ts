@@ -631,8 +631,11 @@ export async function start() {
       where: { id: projectId, OR: [{ userId }, { shared: true }] },
       select: { shared: true },
     });
-    if (!project) return [];
-    return db.terminalSession.findMany({
+    if (!project) {
+      log("warn", `sessions fetch: project ${projectId} not found for uid=${userId}`);
+      return [];
+    }
+    const sessions = await db.terminalSession.findMany({
       where: {
         projectId,
         ...(project.shared ? {} : { userId }),
@@ -641,6 +644,8 @@ export async function start() {
       orderBy: { createdAt: "asc" },
       include: { user: { select: { id: true, name: true } } },
     });
+    log("info", `sessions fetch: project=${projectId} uid=${userId} → ${sessions.length} session(s)`);
+    return sessions;
   }
 
   /** projectId → Map<socket, userId> */
@@ -694,6 +699,7 @@ export async function start() {
       }
 
       if (!userId) {
+        log("warn", `WS /sessions/${projectId} 401 unauthorized`);
         socket.close(1008, "Unauthorized");
         return;
       }
@@ -707,6 +713,8 @@ export async function start() {
         socket.close(1008, "Project not found or access denied");
         return;
       }
+
+      log("info", `WS /sessions/${projectId} open uid=${uid}`);
 
       // --- Register subscriber ---
       if (!sessionClients.has(projectId)) {

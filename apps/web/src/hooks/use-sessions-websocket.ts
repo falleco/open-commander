@@ -50,9 +50,6 @@ export function useSessionsWebSocket(
 ): readonly [SessionEntry[], (session: SessionEntry) => void] {
   const [sessions, setSessions] = useState<SessionEntry[]>([]);
   const socketRef = useRef<WebSocket | null>(null);
-  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const retryDelayRef = useRef(1000);
-  const closedRef = useRef(false);
 
   useEffect(() => {
     if (!enabled || !projectId) {
@@ -60,11 +57,15 @@ export function useSessionsWebSocket(
       return;
     }
 
-    closedRef.current = false;
-    retryDelayRef.current = 1000;
+    // Local variables per effect invocation — avoids the race condition where
+    // the old socket's onclose fires after the new effect resets shared refs,
+    // causing an infinite retry loop against the stale projectId.
+    let closed = false;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let retryDelay = 1000;
 
     const connect = () => {
-      if (closedRef.current) return;
+      if (closed) return;
 
       const protocol = window.location.protocol === "https:" ? "wss" : "ws";
       const ws = new WebSocket(
@@ -85,18 +86,15 @@ export function useSessionsWebSocket(
       };
 
       ws.onopen = () => {
-        retryDelayRef.current = 1000;
+        retryDelay = 1000;
       };
 
       ws.onclose = () => {
-        if (closedRef.current) return;
-        retryTimerRef.current = setTimeout(() => {
-          retryDelayRef.current = Math.min(
-            retryDelayRef.current * 2,
-            MAX_RETRY_DELAY_MS,
-          );
+        if (closed) return;
+        retryTimer = setTimeout(() => {
+          retryDelay = Math.min(retryDelay * 2, MAX_RETRY_DELAY_MS);
           connect();
-        }, retryDelayRef.current);
+        }, retryDelay);
       };
 
       ws.onerror = () => ws.close();
@@ -105,8 +103,8 @@ export function useSessionsWebSocket(
     connect();
 
     return () => {
-      closedRef.current = true;
-      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+      closed = true;
+      if (retryTimer) clearTimeout(retryTimer);
       socketRef.current?.close();
       socketRef.current = null;
       // Do NOT clear sessions here — keep last known data across reconnects.

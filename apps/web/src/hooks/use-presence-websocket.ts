@@ -47,13 +47,7 @@ export function usePresenceWebSocket(
 ): PresenceEntry[] {
   const [presences, setPresences] = useState<PresenceEntry[]>([]);
   const socketRef = useRef<WebSocket | null>(null);
-  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const retryDelayRef = useRef(1000);
-  const closedRef = useRef(false);
   const lastInteractionRef = useRef(Date.now());
-  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
-    null,
-  );
   const sessionIdRef = useRef(sessionId);
 
   // Keep sessionId ref in sync so heartbeat always uses the current sessionId.
@@ -111,8 +105,13 @@ export function usePresenceWebSocket(
       return;
     }
 
-    closedRef.current = false;
-    retryDelayRef.current = 1000;
+    // Local variables per effect invocation — avoids the race condition where
+    // the old socket's onclose fires after the new effect resets shared refs,
+    // causing an infinite retry loop against the stale projectId.
+    let closed = false;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let retryDelay = 1000;
+    let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 
     const sendHeartbeat = (ws: WebSocket) => {
       const sid = sessionIdRef.current;
@@ -122,7 +121,7 @@ export function usePresenceWebSocket(
     };
 
     const connect = () => {
-      if (closedRef.current) return;
+      if (closed) return;
 
       const protocol = window.location.protocol === "https:" ? "wss" : "ws";
       const ws = new WebSocket(
@@ -139,11 +138,11 @@ export function usePresenceWebSocket(
       };
 
       ws.onopen = () => {
-        retryDelayRef.current = 1000;
+        retryDelay = 1000;
         // Send initial heartbeat immediately on connect (if tracking).
         if (sessionIdRef.current && !env.NEXT_PUBLIC_DISABLE_AUTH) {
           sendHeartbeat(ws);
-          heartbeatIntervalRef.current = setInterval(
+          heartbeatInterval = setInterval(
             () => sendHeartbeat(ws),
             HEARTBEAT_INTERVAL_MS,
           );
@@ -151,18 +150,15 @@ export function usePresenceWebSocket(
       };
 
       ws.onclose = () => {
-        clearInterval(heartbeatIntervalRef.current ?? undefined);
-        heartbeatIntervalRef.current = null;
-        if (closedRef.current) return;
+        clearInterval(heartbeatInterval ?? undefined);
+        heartbeatInterval = null;
+        if (closed) return;
         // Back-off reconnect. Presences are intentionally kept so the UI
         // does not flash empty while reconnecting.
-        retryTimerRef.current = setTimeout(() => {
-          retryDelayRef.current = Math.min(
-            retryDelayRef.current * 2,
-            MAX_RETRY_DELAY_MS,
-          );
+        retryTimer = setTimeout(() => {
+          retryDelay = Math.min(retryDelay * 2, MAX_RETRY_DELAY_MS);
           connect();
-        }, retryDelayRef.current);
+        }, retryDelay);
       };
 
       ws.onerror = () => ws.close();
@@ -171,10 +167,10 @@ export function usePresenceWebSocket(
     connect();
 
     return () => {
-      closedRef.current = true;
-      clearInterval(heartbeatIntervalRef.current ?? undefined);
-      heartbeatIntervalRef.current = null;
-      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+      closed = true;
+      clearInterval(heartbeatInterval ?? undefined);
+      heartbeatInterval = null;
+      if (retryTimer) clearTimeout(retryTimer);
       const ws = socketRef.current;
       if (ws) {
         // Send leave before closing so presence is removed immediately.

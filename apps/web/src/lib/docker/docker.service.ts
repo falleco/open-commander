@@ -6,11 +6,13 @@ import type { DockerRunOptions } from "./docker.types";
 import { DockerMountMode } from "./docker.types";
 
 const DOCKER_TIMEOUT = 20000;
+// docker run may block on image layer operations (pull, unpack) — give it plenty of time.
+const DOCKER_RUN_TIMEOUT = 5 * 60 * 1000;
 const execFileAsync = promisify(execFile);
 
-async function runDocker(args: string[]) {
+async function runDocker(args: string[], timeoutMs = DOCKER_TIMEOUT) {
   console.log("Running Docker command: docker", args.join(" "));
-  return execFileAsync("docker", args, { timeout: DOCKER_TIMEOUT });
+  return execFileAsync("docker", args, { timeout: timeoutMs });
 }
 
 /**
@@ -68,7 +70,7 @@ export const dockerService = {
     if (options.args?.length) {
       args.push(...options.args);
     }
-    return runDocker(args);
+    return runDocker(args, DOCKER_RUN_TIMEOUT);
   },
 
   /**

@@ -1,35 +1,35 @@
 services:
-  commander:
-    image: opencommander/web:prod
-    build:
-      context: .
-      dockerfile: docker/commander/Dockerfile
-      target: runner
-    ports:
-      - "${APP_PORT:-3000}:3000"
-    environment:
-      NODE_ENV: production
-      COMMANDER_BASE_PATH: ${COMMANDER_BASE_PATH}
-      AGENT_WORKSPACE: ${AGENT_WORKSPACE}
-      AGENT_STATE_PATH: ${AGENT_STATE_PATH:-}
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
-      NEXT_PUBLIC_UPLOADTHING_URL_ROOT: ${NEXT_PUBLIC_UPLOADTHING_URL_ROOT:-${NEXT_PUBLIC_APP_URL}}
-      DATABASE_URL: ${DATABASE_URL}
-      REDIS_HOSTNAME: ${REDIS_HOSTNAME}
-      REDIS_PORT: ${REDIS_PORT}
-      DIND_CERTS_VOLUME: ${DIND_CERTS_VOLUME:-open-commander_open-commander-dind-certs}
-      DOCKER_HOST: unix:///var/run/docker.sock
-    volumes:
-      - ${AGENT_STATE_PATH:-./.state}:/home/commander/.state
-      - ./agents:/home/commander/agents
-      - ${AGENT_WORKSPACE}:/workspace
-      - /var/run/docker.sock:/var/run/docker.sock
-    depends_on:
-      egress-proxy:
-        condition: service_started
-      docker-dind:
-        condition: service_started
-    restart: unless-stopped
+  # commander:
+  #   image: ghcr.io/open-commander/open-commander-web:latest
+  #   build:
+  #     context: .
+  #     dockerfile: docker/commander/Dockerfile
+  #     target: runner
+  #   ports:
+  #     - "${APP_PORT:-3000}:3000"
+  #   environment:
+  #     NODE_ENV: production
+  #     COMMANDER_BASE_PATH: ${COMMANDER_BASE_PATH}
+  #     AGENT_WORKSPACE: ${AGENT_WORKSPACE}
+  #     AGENT_STATE_PATH: ${AGENT_STATE_PATH:-}
+  #     NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+  #     NEXT_PUBLIC_UPLOADTHING_URL_ROOT: ${NEXT_PUBLIC_UPLOADTHING_URL_ROOT:-${NEXT_PUBLIC_APP_URL}}
+  #     DATABASE_URL: ${DATABASE_URL}
+  #     REDIS_HOSTNAME: ${REDIS_HOSTNAME}
+  #     REDIS_PORT: ${REDIS_PORT}
+  #     DIND_CERTS_VOLUME: ${DIND_CERTS_VOLUME:-open-commander_open-commander-dind-certs}
+  #     DOCKER_HOST: unix:///var/run/docker.sock
+  #   volumes:
+  #     - ${AGENT_STATE_PATH:-./.state}:/home/commander/.state
+  #     - ./agents:/home/commander/agents
+  #     - ${AGENT_WORKSPACE}:/workspace
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   depends_on:
+  #     egress-proxy:
+  #       condition: service_started
+  #     docker-dind:
+  #       condition: service_started
+  #   restart: unless-stopped
 
   egress-proxy:
     build:

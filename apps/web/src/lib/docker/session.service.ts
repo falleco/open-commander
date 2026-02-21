@@ -170,44 +170,53 @@ export const sessionService = {
         "0.0.0.0",
         ...TTYD_CMD,
       ];
-      try {
-        await dockerService.run({
-          name: agentContainer,
-          image: IMAGE,
-          network: env.TTYD_INTERNAL_NETWORK,
-          env: containerEnv,
-          mounts,
-          extraHosts: EXTRA_HOSTS,
-          args: containerArgs,
-        });
-      } catch (error) {
-        let stderr = "";
-        if (typeof error === "object" && error !== null && "stderr" in error) {
-          const maybe = (error as { stderr?: unknown }).stderr;
-          if (typeof maybe === "string") {
-            stderr = maybe;
+      // Ensure the image is locally available before running. Docker daemon
+      // deduplicates concurrent pulls, so if the background prefetch is still
+      // pulling this image, this call will wait for it to finish rather than
+      // racing — eliminating layer lock contention entirely.
+      await dockerService.pull(IMAGE);
+
+      const runOptions = {
+        name: agentContainer,
+        image: IMAGE,
+        network: env.TTYD_INTERNAL_NETWORK,
+        env: containerEnv,
+        mounts,
+        extraHosts: EXTRA_HOSTS,
+        args: containerArgs,
+      };
+
+      // Retry on layer lock contention — safety net in case a concurrent pull
+      // starts between the pull above and the run below.
+      const MAX_LAYER_RETRIES = 5;
+      let launched = false;
+      for (let attempt = 0; attempt <= MAX_LAYER_RETRIES && !launched; attempt++) {
+        try {
+          await dockerService.run(runOptions);
+          launched = true;
+        } catch (error) {
+          let stderr = "";
+          if (typeof error === "object" && error !== null && "stderr" in error) {
+            const maybe = (error as { stderr?: unknown }).stderr;
+            if (typeof maybe === "string") stderr = maybe;
           }
-        }
-        if (stderr.includes("already in use") || stderr.includes("Conflict")) {
-          try {
-            await dockerService.start(agentContainer);
-          } catch {
-            await dockerService.safeRemove(agentContainer);
-            await dockerService.ensureNetwork(env.TTYD_INTERNAL_NETWORK, {
-              internal: true,
-            });
-            await dockerService.run({
-              name: agentContainer,
-              image: IMAGE,
-              network: env.TTYD_INTERNAL_NETWORK,
-              env: containerEnv,
-              mounts,
-              extraHosts: EXTRA_HOSTS,
-              args: containerArgs,
-            });
+          const detail = stderr + (error instanceof Error ? error.message : "");
+          if (stderr.includes("already in use") || stderr.includes("Conflict")) {
+            try {
+              await dockerService.start(agentContainer);
+            } catch {
+              await dockerService.safeRemove(agentContainer);
+              await dockerService.ensureNetwork(env.TTYD_INTERNAL_NETWORK, {
+                internal: true,
+              });
+              await dockerService.run(runOptions);
+            }
+            launched = true;
+          } else if (detail.includes("locked") && attempt < MAX_LAYER_RETRIES) {
+            await new Promise((r) => setTimeout(r, 5000));
+          } else {
+            throw error;
           }
-        } else {
-          throw error;
         }
       }
     } else if (reset) {

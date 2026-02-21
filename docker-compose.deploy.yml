@@ -65,7 +65,8 @@ services:
       # Persist the internal dockerd's data across restarts.
       - dind-data:/var/lib/docker
       - agent-state:/root/.state
-      - agent-workspace:/workspace
+      # - agent-workspace:/workspace
+      - ${DOCKER_AGENT_WORKSPACE}:/workspace
       # Optional: mount a custom agents volume to override the baked-in defaults.
       # Set DOCKER_AGENTS_VOLUME=<volume-name> in your .env.deploy and uncomment:
       # - ${DOCKER_AGENTS_VOLUME:-agents-default}:/app/agents
